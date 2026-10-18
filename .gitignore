@@ -30,6 +30,9 @@ assets/ffmpeg/ffmpeg
 # AppImage build artifacts
 *.AppImage
 
+# Build tooling cache (appimagetool + static Type 2 runtime downloads)
+.cache/
+
 # Editor and OS
 .DS_Store
 *.swp
