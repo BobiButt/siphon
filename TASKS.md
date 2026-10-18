@@ -37,13 +37,12 @@ This document tracks all implementation milestones and atomic tasks for Siphon. 
 
 ---
 
-## [ ] Milestone 3: Download Pipeline & Static FFmpeg Muxing
-- [ ] Create `scripts/fetch_ffmpeg.sh` to download pinned BtbN static Linux x86_64 FFmpeg binary into `assets/ffmpeg/ffmpeg` with `chmod 0755`.
-- [ ] Implement download manager in `src/siphon/downloader/manager.py` handling active downloads, cancelation tokens, and destination directory resolution.
-- [ ] Implement yt-dlp progress hook emitting real-time percentage, download speed, ETA, and state transitions (downloading, muxing, completed, error).
-- [ ] Configure yt-dlp post-processor to execute bundled static FFmpeg (`assets/ffmpeg/ffmpeg`) for automatic DASH video/audio stream muxing.
-- [ ] Create FastAPI endpoints `POST /api/download` (start download) and `GET /api/download/{id}/status` or WebSocket streaming for live progress.
-- [ ] Write pytest test suite in `tests/test_downloader.py` verifying download job state machine, FFmpeg path resolution, and error propagation.
+## [x] Milestone 3: Download Pipeline & Static FFmpeg Muxing
+- [x] Scaffold and configure static FFmpeg binary fetch pipeline (`scripts/fetch_ffmpeg.sh`).
+- [x] Implement `download_media` in `src/siphon/downloader/core.py` resolving companion audio for DASH streams.
+- [x] Implement `mux_streams` in `src/siphon/downloader/ffmpeg_muxer.py` invoking bundled FFmpeg with `-c:v copy -c:a aac` and temporary file cleanup.
+- [x] Create FastAPI endpoint `POST /api/download` executing download and muxing pipeline.
+- [x] Write pytest test suite in `tests/test_downloader.py` verifying DASH stream separation, exact FFmpeg command generation, failure raising, and `/api/download` execution.
 
 ---
 

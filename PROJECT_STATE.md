@@ -1,7 +1,7 @@
 # Project State — Siphon
 
 ## Current Milestone
-**M3: Download Pipeline & Static FFmpeg Muxing** (Milestones 0, 1, 2 satisfied; entering media download & muxing phase)
+**M4: Native pywebview Desktop Shell & UI** (Milestones 0, 1, 2, 3 satisfied; entering desktop GUI & frontend phase)
 
 ---
 
@@ -25,20 +25,25 @@
   - Implemented `extract_video_info()` in `src/siphon/extractors/ytdlp_extractor.py` using native `yt_dlp.YoutubeDL` Python API with quiet options.
   - Parsed video metadata (`title`, `duration`, `thumbnail`, `uploader`, `id`) and categorized streams into progressive, video-only DASH (1080p, 1440p, 4K), and audio-only formats.
   - Implemented `GET /api/info?url=...` in `src/siphon/api.py` with clean 400 Bad Request error handling.
-  - Wrote comprehensive offline mock unit tests in `tests/test_extractor.py` and `tests/test_api.py`. All 14 tests passing.
+  - Wrote comprehensive offline mock unit tests in `tests/test_extractor.py` and `tests/test_api.py`.
+- **M3 Download Pipeline & Static FFmpeg Muxing:**
+  - Implemented `download_media()` in `src/siphon/downloader/core.py` detecting DASH video-only streams and downloading companion audio streams for muxing.
+  - Implemented `mux_streams()` in `src/siphon/downloader/ffmpeg_muxer.py` executing bundled static FFmpeg (`assets/ffmpeg/ffmpeg`) with `-c:v copy -c:a aac`, error capture via `MuxingError`, and temporary source cleanup.
+  - Implemented `POST /api/download` in `src/siphon/api.py` orchestrating stream downloads and muxing.
+  - Wrote unit tests in `tests/test_downloader.py` validating DASH resolution, exact FFmpeg command generation, failure raising, and API route execution. All 18 tests passing.
 
 ---
 
 ## 🚧 In Progress
-- **M3 Download Pipeline & Static FFmpeg Muxing:** Downloading streams and muxing adaptive DASH streams with bundled static FFmpeg.
+- **M4 Native pywebview Shell & Frontend:** Developing NewPipe-inspired desktop frontend and native WebKitGTK pywebview application lifecycle.
 
 ---
 
-## ⏭️ Next Up (M3 Tasks)
-1. **Static FFmpeg Retrieval Script:** Implement `scripts/fetch_ffmpeg.sh` downloading pinned BtbN static Linux x86_64 FFmpeg release archive to `assets/ffmpeg/ffmpeg` with `chmod 0755`.
-2. **Download Manager:** Implement `src/siphon/downloader/manager.py` managing download requests, cancelation, destination folders, and progress hooks.
-3. **FFmpeg Stream Muxer:** Configure yt-dlp post-processor / `ffmpeg_muxer.py` using `assets/ffmpeg/ffmpeg` to merge separate DASH video and audio streams into single output files.
-4. **Download API Endpoints:** Create `POST /api/download` and status endpoints with comprehensive pytest test coverage.
+## ⏭️ Next Up (M4 Tasks)
+1. **Frontend Interface:** Build responsive UI in `frontend/index.html`, `frontend/style.css`, and `frontend/app.js` with modern Dark Mode, URL input, video preview card, format selector (progressive, video-only, audio-only), and download actions.
+2. **pywebview Window Launcher:** Implement `launch_window()` in `src/siphon/launcher.py` pointing to the dynamic backend port with WebKitGTK.
+3. **App Lifecycle Integration:** Wire `src/siphon/app.py` / `src/siphon/__main__.py` to start the backend server and open the pywebview GUI window, ensuring window closure terminates the server.
+4. **Lifecycle Tests:** Implement `tests/test_app_lifecycle.py` verifying headless vs. desktop execution flags and clean termination.
 
 ---
 

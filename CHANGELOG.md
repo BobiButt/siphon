@@ -39,3 +39,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Parsed metadata and categorized formats into progressive, video-only DASH (1080p, 1440p, 4K), and audio-only streams.
   - Implemented `GET /api/info?url=...` endpoint in `src/siphon/api.py` with 400 Bad Request error mapping.
   - Added offline unit test suites in `tests/test_extractor.py` and `tests/test_api.py` utilizing mocked yt-dlp fixtures.
+- Session 1 — implemented download pipeline, FFmpeg muxing, and download endpoint:
+  - Implemented `download_media` in `src/siphon/downloader/core.py` detecting DASH video-only streams and retrieving complementary audio tracks for muxing.
+  - Implemented `mux_streams` in `src/siphon/downloader/ffmpeg_muxer.py` using bundled static FFmpeg with `-c:v copy -c:a aac` and temporary stream file cleanup.
+  - Implemented `POST /api/download` in `src/siphon/api.py` orchestrating stream downloads and muxing.
+  - Added unit test suite in `tests/test_downloader.py` covering DASH resolution, exact FFmpeg command generation, error handling, and API integration.
