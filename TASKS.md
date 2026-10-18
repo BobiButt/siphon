@@ -27,13 +27,13 @@ This document tracks all implementation milestones and atomic tasks for Siphon. 
 
 ---
 
-## [ ] Milestone 2: yt-dlp Extraction Engine
-- [ ] Implement yt-dlp Python API wrapper in `src/siphon/extractors/youtube.py` with custom logger and quiet extract options.
-- [ ] Parse YouTube video metadata (video ID, title, channel name, duration, view count, high-res thumbnail URL).
-- [ ] Parse and categorize stream formats into progressive (combined video+audio) and adaptive DASH formats (video-only up to 4K, audio-only formats).
-- [ ] Create FastAPI endpoint `POST /api/info` taking a YouTube URL, validating format, and returning structured stream options.
-- [ ] Add defensive error handling for invalid URLs, private/restricted videos, geo-blocks, and network timeouts.
-- [ ] Write pytest test suite in `tests/test_extractor.py` utilizing mocked yt-dlp extractors and recorded sample payloads.
+## [x] Milestone 2: yt-dlp Extraction Engine
+- [x] Implement yt-dlp Python API wrapper in `src/siphon/extractors/ytdlp_extractor.py` with quiet extract options.
+- [x] Parse YouTube video metadata (video ID, title, uploader, duration, thumbnail URL).
+- [x] Parse and categorize stream formats into progressive, video-only DASH (1080p/4K), and audio-only formats.
+- [x] Create FastAPI endpoint `GET /api/info?url=...` validating URL and returning structured format options.
+- [x] Add defensive error handling for invalid/empty URLs and yt-dlp `DownloadError` exceptions (HTTP 400).
+- [x] Write pytest test suites in `tests/test_extractor.py` and `tests/test_api.py` utilizing mocked yt-dlp extractors.
 
 ---
 

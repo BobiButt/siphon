@@ -4,12 +4,13 @@ from pathlib import Path
 from typing import Optional
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
+from siphon.api import router as api_router
 
 
 def create_app(frontend_dir: Optional[Path] = None) -> FastAPI:
     """Create and configure the FastAPI application instance.
 
-    Sets up health and status routes, then mounts the static frontend
+    Sets up health and API routes, then mounts the static frontend
     directory at the root route `/`.
     """
     app = FastAPI(
@@ -22,6 +23,9 @@ def create_app(frontend_dir: Optional[Path] = None) -> FastAPI:
     async def health_check() -> dict:
         """Health check endpoint confirming backend availability."""
         return {"status": "ok", "app": "siphon"}
+
+    # Include REST API endpoints under /api
+    app.include_router(api_router, prefix="/api")
 
     # Resolve frontend directory path
     if frontend_dir is None:

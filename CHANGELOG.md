@@ -34,3 +34,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Implemented `create_app()` in `src/siphon/app.py` providing `/health` endpoint and mounting `frontend/` static assets at `/`.
   - Added CLI entry point in `src/siphon/__main__.py` supporting `--headless` execution, localhost verification, and graceful SIGINT/SIGTERM shutdown.
   - Added integration test suite in `tests/test_server.py` verifying non-8000 dynamic port assignment, HTTP `/health` JSON response, and clean socket teardown.
+- Session 1 — implemented yt-dlp extraction, format parsing, and API endpoint:
+  - Implemented `extract_video_info` in `src/siphon/extractors/ytdlp_extractor.py` utilizing native `yt_dlp.YoutubeDL` Python API with quiet options.
+  - Parsed metadata and categorized formats into progressive, video-only DASH (1080p, 1440p, 4K), and audio-only streams.
+  - Implemented `GET /api/info?url=...` endpoint in `src/siphon/api.py` with 400 Bad Request error mapping.
+  - Added offline unit test suites in `tests/test_extractor.py` and `tests/test_api.py` utilizing mocked yt-dlp fixtures.

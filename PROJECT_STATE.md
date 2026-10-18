@@ -1,7 +1,7 @@
 # Project State — Siphon
 
 ## Current Milestone
-**M2: yt-dlp Extraction Engine** (Milestone 1 satisfied; preparing extraction engine)
+**M3: Download Pipeline & Static FFmpeg Muxing** (Milestones 0, 1, 2 satisfied; entering media download & muxing phase)
 
 ---
 
@@ -20,20 +20,25 @@
   - Implemented `SiphonServer` and `start_server` in `src/siphon/server.py` programmatically wrapping Uvicorn on `127.0.0.1:0` and extracting ephemeral port via socket inspection.
   - Implemented `create_app()` in `src/siphon/app.py` with `/health` endpoint returning `{"status": "ok", "app": "siphon"}` and static file mounting for `frontend/` at `/`.
   - Implemented CLI runner in `src/siphon/__main__.py` with `--headless` flag, localhost constraint enforcement, and graceful SIGINT/SIGTERM termination.
-  - Created integration test suite in `tests/test_server.py` verifying dynamic port allocation (non-8000), `/health` payload, clean shutdown, and root static file serving. 7/7 tests passing.
+  - Created integration test suite in `tests/test_server.py` verifying dynamic port allocation (non-8000), `/health` payload, clean shutdown, and root static file serving.
+- **M2 yt-dlp Extraction Engine:**
+  - Implemented `extract_video_info()` in `src/siphon/extractors/ytdlp_extractor.py` using native `yt_dlp.YoutubeDL` Python API with quiet options.
+  - Parsed video metadata (`title`, `duration`, `thumbnail`, `uploader`, `id`) and categorized streams into progressive, video-only DASH (1080p, 1440p, 4K), and audio-only formats.
+  - Implemented `GET /api/info?url=...` in `src/siphon/api.py` with clean 400 Bad Request error handling.
+  - Wrote comprehensive offline mock unit tests in `tests/test_extractor.py` and `tests/test_api.py`. All 14 tests passing.
 
 ---
 
 ## 🚧 In Progress
-- **M2 yt-dlp Integration:** Integrating yt-dlp Python API to extract YouTube video metadata, thumbnails, progressive formats, and adaptive DASH streams.
+- **M3 Download Pipeline & Static FFmpeg Muxing:** Downloading streams and muxing adaptive DASH streams with bundled static FFmpeg.
 
 ---
 
-## ⏭️ Next Up (M2 Tasks)
-1. **yt-dlp Extractor Service:** Implement `src/siphon/extractors/youtube.py` with `yt_dlp.YoutubeDL` options (quiet, extract_flat=False, skip_download=True).
-2. **Metadata & Stream Parsing:** Extract video ID, title, uploader, duration, thumbnail URLs, and split formats into progressive (muxed) vs. adaptive (separate 1080p/4K video and audio).
-3. **Information Endpoint:** Implement FastAPI route `POST /api/info` taking `{"url": "..."}` and returning normalized format options.
-4. **Extractor Test Suite:** Write `tests/test_extractor.py` using recorded yt-dlp responses and mock fixtures for offline testing.
+## ⏭️ Next Up (M3 Tasks)
+1. **Static FFmpeg Retrieval Script:** Implement `scripts/fetch_ffmpeg.sh` downloading pinned BtbN static Linux x86_64 FFmpeg release archive to `assets/ffmpeg/ffmpeg` with `chmod 0755`.
+2. **Download Manager:** Implement `src/siphon/downloader/manager.py` managing download requests, cancelation, destination folders, and progress hooks.
+3. **FFmpeg Stream Muxer:** Configure yt-dlp post-processor / `ffmpeg_muxer.py` using `assets/ffmpeg/ffmpeg` to merge separate DASH video and audio streams into single output files.
+4. **Download API Endpoints:** Create `POST /api/download` and status endpoints with comprehensive pytest test coverage.
 
 ---
 
