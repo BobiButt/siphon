@@ -18,8 +18,8 @@ This document tracks all implementation milestones and atomic tasks for Siphon. 
 ---
 
 ## [ ] Milestone 1: Backend Core & Dynamic Server
-- [ ] Initialize project packaging configuration (`pyproject.toml`, `requirements.txt`, `requirements-dev.txt`, `.gitignore`, `LICENSE`, `README.md`).
-- [ ] Create core Python package structure under `src/siphon/` (`__init__.py`, `server.py`, `config.py`).
+- [x] Initialize project packaging configuration (`pyproject.toml`, `requirements.txt`, `.gitignore`, `LICENSE`, `README.md`).
+- [x] Create core Python package and frontend scaffolding (`src/siphon/`, `frontend/`, `tests/`, `scripts/`).
 - [ ] Implement Uvicorn server launcher binding dynamically to `127.0.0.1:0` and exposing a thread-safe port accessor.
 - [ ] Implement FastAPI application instance with `/api/health` and `/api/version` endpoints returning structured JSON.
 - [ ] Mount frontend static file directory in FastAPI (`/` serving `frontend/index.html`).

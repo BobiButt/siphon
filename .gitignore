@@ -1,0 +1,36 @@
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+build/
+dist/
+AppDir/
+*.egg-info/
+.eggs/
+
+# Testing & coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Static binaries (fetched via scripts/fetch_ffmpeg.sh)
+assets/ffmpeg/ffmpeg
+
+# AppImage build artifacts
+*.AppImage
+
+# Editor and OS
+.DS_Store
+*.swp
+*~

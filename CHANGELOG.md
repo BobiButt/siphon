@@ -22,3 +22,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `prompts/kickoff.md`: Verbatim archive of initial project kickoff brief and requirements.
   - `prompts/handoff.md`: Standardized prompt template for incoming AI agents resuming development.
 - Verified Phase 0 requirements and gated progression to Phase 1 pending user approval.
+- Session 1 — scaffolded project structure:
+  - Created package layout under `src/siphon/` (`__init__.py`, `app.py`, `server.py`, `launcher.py`).
+  - Added module stubs for extractors (`ytdlp_extractor.py`) and downloader (`ffmpeg_muxer.py`).
+  - Created zero-build frontend stubs (`frontend/index.html` with `<title>Siphon</title>`, `style.css`, `app.js`).
+  - Created project metadata and configuration (`pyproject.toml`, `requirements.txt`, `.gitignore`, `LICENSE`, `README.md`).
+  - Created packaging and setup scripts (`scripts/gen_icons.sh`, `scripts/build_appimage.sh`, `scripts/fetch_ffmpeg.sh`, `scripts/build_in_docker.sh`).
+  - Initialized test harness with `tests/test_placeholder.py` verifying package metadata and passing with pytest.
