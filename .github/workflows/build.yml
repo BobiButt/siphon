@@ -1,0 +1,35 @@
+name: Build AppImage
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build AppImage inside Ubuntu 22.04 container
+        run: |
+          chmod +x scripts/*.sh
+          ./scripts/build_in_docker.sh
+
+      - name: Smoke test AppImage (--version)
+        run: |
+          APPIMAGE="$(ls dist/*.AppImage | head -n 1)"
+          chmod +x "$APPIMAGE"
+          echo "Testing: $APPIMAGE"
+          "$APPIMAGE" --version
+
+      - name: Upload AppImage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: siphon-appimage
+          path: dist/*.AppImage
+          if-no-files-found: error

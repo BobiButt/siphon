@@ -1,0 +1,43 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build AppImage inside Ubuntu 22.04 container
+        run: |
+          chmod +x scripts/*.sh
+          ./scripts/build_in_docker.sh
+
+      - name: Smoke test AppImage (--version)
+        run: |
+          APPIMAGE="$(ls dist/*.AppImage | head -n 1)"
+          chmod +x "$APPIMAGE"
+          echo "Testing: $APPIMAGE"
+          "$APPIMAGE" --version
+
+      - name: Generate SHA-256 checksums
+        run: |
+          cd dist
+          sha256sum ./*.AppImage > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      - name: Create GitHub Release and upload assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/*.AppImage
+            dist/SHA256SUMS.txt
+          generate_release_notes: true
