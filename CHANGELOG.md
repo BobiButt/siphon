@@ -58,3 +58,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Implemented `scripts/build_in_docker.sh` for reproducible Ubuntu 22.04 containerized compilation.
   - Documented host Runtime Dependencies in `README.md` and `DEV_SETUP.md`.
   - Added unit tests in `tests/test_packaging.py` verifying build failure handling, spec hidden imports, and desktop entry fields.
+
+### Session 2 — 2026-10-18
+#### Fixed
+- Removed the unsupported `icon=icon_arg` keyword argument from the `webview.create_window()` call in `src/siphon/launcher.py`, which previously raised a `TypeError` on GUI launch. `pywebview`'s `create_window()` API does not accept an `icon` parameter; desktop icon integration is delegated to the AppImage and the XDG `.desktop` entry (per ADR-001 / M5). Also removed the now-dead `icon_path` parameter, its default-resolution block, and the unused `os`/`Path`/`Optional` imports. All 24 tests pass.
