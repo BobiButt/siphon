@@ -34,3 +34,12 @@ When filing a new issue in this register, use the following structure:
 
 ### No Other Active Issues
 - **Status:** All other systems operational. The handoff documentation system and architectural foundations were established without further issues.
+
+### ISSUE-002: Containerized build uses Python 3.10 but project requires Python 3.11+
+- **Date Discovered:** 2026-10-18
+- **Affected Milestone / Component:** M5 / packaging (`scripts/build_in_docker.sh`) and M6 / CI (`build.yml`, `release.yml`)
+- **Symptom:** The reference build runs inside an `ubuntu:22.04` container, whose system `python3` is **3.10**. However, `pyproject.toml` declares `requires-python = ">=3.11"` and the architecture baseline mandates Python 3.11+. The containerized AppImage would bundle a 3.10 interpreter, contradicting the stated requirement.
+- **Repro:** Inspect `scripts/build_in_docker.sh` (installs `python3` from the Ubuntu 22.04 apt repo → Python 3.10) versus `pyproject.toml` (`requires-python = ">=3.11"`).
+- **Investigation So Far:** The host build used Python 3.14 (works). The container path installs only distro `python3`, which on 22.04 is 3.10. `pip install -r requirements.txt` does not enforce `requires-python`, so the build currently succeeds despite the mismatch.
+- **Attempted Fixes:** None yet — deferred to avoid unilaterally changing an ADR-mandated build environment.
+- **Next Step:** Decide on a fix that preserves the glibc 2.35 baseline while providing Python 3.11+: e.g., install Python 3.11 from the deadsnakes PPA inside the container, or switch to a `python:3.11`-based image with glibc 2.35/2.36. Record the choice as a new ADR before changing the script.

@@ -101,3 +101,18 @@ This document records the foundational architectural decisions for Siphon. Each 
   - *Default AppImage runtime:* Rejected because users on modern Fedora and Ubuntu systems encounter `dlopen(): error loading libfuse.so.2` and cannot run the application without installing deprecated packages.
   - *Prompting users to install `libfuse2`:* Rejected as poor user experience for an open-source desktop application aimed at ease of use.
 - **Consequences:** The build script must fetch the prebuilt static Type 2 runtime binary and pass it to `appimagetool` via the `--runtime-file` flag. The resulting AppImage size is marginally larger (~1-2MB), which is negligible.
+
+---
+
+### ADR-009: CI/CD via GitHub Actions with Containerized Builds and Tag-Triggered Releases
+- **Date:** 2026-10-18
+- **Decision:** Use GitHub Actions for continuous integration and release automation, with three workflows:
+  - `test.yml`: run `pytest` across a Python 3.11 and 3.12 matrix on pushes and pull requests to `main`.
+  - `build.yml`: execute the existing `scripts/build_in_docker.sh` (reusing the ADR-007 containerized pipeline) on pushes/PRs and manual dispatch, smoke-test the produced AppImage via `--version`, and upload it as a workflow artifact.
+  - `release.yml`: on `v*` tag pushes, run the containerized build, smoke-test, generate a `SHA256SUMS.txt` via `sha256sum`, and publish the AppImage plus checksum to a GitHub Release using `softprops/action-gh-release@v2` with `permissions: contents: write`.
+- **Why:** GitHub Actions is native to the hosting platform (no external CI credentials), provides Linux runners with Docker preinstalled (satisfying the ADR-007 container requirement), and supports matrix testing and tag-triggered release publishing out of the box. Reusing `build_in_docker.sh` in CI guarantees the exact same glibc-2.35 build environment used locally, keeping artifacts reproducible and identical between developer machines and release binaries. The `--version` smoke test (handled by `argparse` before any server/GUI initialization) validates the binary headlessly.
+- **Alternatives Considered:**
+  - *GitLab CI / CircleCI / Travis:* Rejected because they require external service credentials and do not match the GitHub hosting target.
+  - *Building directly on the hosted runner (no container):* Rejected because runner glibc versions change over time and would violate the ADR-007 glibc-2.35 reproducibility guarantee.
+  - *Writing a custom release script with the GitHub REST API:* Rejected in favor of the well-maintained `softprops/action-gh-release` action, which handles asset upload and release notes generation.
+- **Consequences:** Workflow definitions live in `.github/workflows/` and are validated by `tests/test_ci.py` (structure, Python matrix, containerized build invocation, tag trigger, and release-asset wiring). Docker is required on CI runners. Release artifacts are only produced from `v*` tags, decoupling "merge" from "release." A known open issue (ISSUE-002) remains: the `ubuntu:22.04` build container's system Python is 3.10 versus the project's `requires-python >= 3.11` requirement, which must be reconciled before the first tagged release.

@@ -62,3 +62,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Session 2 — 2026-10-18
 #### Fixed
 - Removed the unsupported `icon=icon_arg` keyword argument from the `webview.create_window()` call in `src/siphon/launcher.py`, which previously raised a `TypeError` on GUI launch. `pywebview`'s `create_window()` API does not accept an `icon` parameter; desktop icon integration is delegated to the AppImage and the XDG `.desktop` entry (per ADR-001 / M5). Also removed the now-dead `icon_path` parameter, its default-resolution block, and the unused `os`/`Path`/`Optional` imports. All 24 tests pass.
+#### Added
+- Executed the M5 AppImage build pipeline for the first time via `scripts/build_appimage.sh` on the host (Fedora 44), producing `dist/Siphon-0.1.0-x86_64.AppImage` (30 MB, static Type 2 runtime). Smoke test passed: `--version` → `Siphon 0.1.0`, exit code 0. Documented the host-glibc (2.43) caveat versus the release-grade glibc-2.35 containerized target.
+- Added three GitHub Actions workflows for M6:
+  - `.github/workflows/test.yml`: pytest matrix across Python 3.11 and 3.12 on push/PR.
+  - `.github/workflows/build.yml`: containerized `build_in_docker.sh`, `--version` smoke test, and AppImage artifact upload.
+  - `.github/workflows/release.yml`: triggered on `v*` tags; builds, smoke-tests, generates `SHA256SUMS.txt`, and publishes the AppImage + checksums to a GitHub Release.
+- Added `tests/test_ci.py` validating the structure of all three workflow definitions (Python matrix, containerized build invocation, artifact/release asset wiring, tag trigger, and `contents:write` permission). Suite now totals 28 passing tests.
+- Added `.cache/` to `.gitignore` (build-tooling download cache for `appimagetool` and the static Type 2 runtime).

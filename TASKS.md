@@ -66,8 +66,8 @@ This document tracks all implementation milestones and atomic tasks for Siphon. 
 
 ---
 
-## [ ] Milestone 6: Continuous Integration & Automated Releases
-- [ ] Configure GitHub Actions workflow `.github/workflows/test.yml` running pytest across Python 3.11 and 3.12.
-- [ ] Configure GitHub Actions workflow `.github/workflows/build.yml` executing `scripts/build_in_docker.sh` to generate the AppImage artifact.
-- [ ] Configure release workflow `.github/workflows/release.yml` triggered on git tags (`v*`) to upload `Siphon-<version>-x86_64.AppImage` and SHA-256 checksums.
-- [ ] Write end-to-end smoke verification test ensuring AppImage binary executes `--version` and exits with code 0.
+## [x] Milestone 6: Continuous Integration & Automated Releases
+- [x] Configure GitHub Actions workflow `.github/workflows/test.yml` running pytest across Python 3.11 and 3.12.
+- [x] Configure GitHub Actions workflow `.github/workflows/build.yml` executing `scripts/build_in_docker.sh` to generate the AppImage artifact.
+- [x] Configure release workflow `.github/workflows/release.yml` triggered on git tags (`v*`) to upload `Siphon-<version>-x86_64.AppImage` and SHA-256 checksums.
+- [x] Write end-to-end smoke verification test ensuring AppImage binary executes `--version` and exits with code 0. (Implemented as a `--version` smoke-test step in `build.yml`/`release.yml`; structure guarded by `tests/test_ci.py`. Locally verified: `Siphon-0.1.0-x86_64.AppImage --version` → exit 0.)

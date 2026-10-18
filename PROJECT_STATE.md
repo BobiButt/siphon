@@ -1,7 +1,7 @@
 # Project State — Siphon
 
 ## Current Milestone
-**M6: Continuous Integration & Automated Releases** (Milestones 0 through 5 satisfied; entering CI/CD phase)
+**M6: Continuous Integration & Automated Releases** (Milestones 0–5 satisfied; M5 AppImage artifact built & smoke-tested; M6 CI workflows authored — final validation pending the first real CI run / tagged release)
 
 ---
 
@@ -44,20 +44,22 @@
   - Implemented containerized build wrapper in `scripts/build_in_docker.sh` targeting `ubuntu:22.04` for glibc 2.35 compatibility.
   - Documented Runtime Dependencies in `DEV_SETUP.md` and `README.md`.
   - Wrote packaging unit tests in `tests/test_packaging.py` verifying build failure handling, spec hidden imports, and desktop entry fields. All 24 tests passing.
-- **Launcher Bug Fix (Session 2):** Removed the unsupported `icon=icon_arg` argument from `webview.create_window()` in `src/siphon/launcher.py`, which previously raised a `TypeError` on GUI launch. Also removed the dead `icon_path` plumbing and now-unused imports. All 24 tests remain green. (Note: the AppImage artifact itself has not yet been built — `dist/` does not exist.)
+- **Launcher Bug Fix (Session 2):** Removed the unsupported `icon=icon_arg` argument from `webview.create_window()` in `src/siphon/launcher.py`, which previously raised a `TypeError` on GUI launch. Also removed the dead `icon_path` plumbing and now-unused imports. All 24 tests remain green.
+- **M5 AppImage Build Executed (Session 2):** Ran `scripts/build_appimage.sh` on the host (Fedora 44). Successfully produced `dist/Siphon-0.1.0-x86_64.AppImage` (30 MB, static Type 2 runtime — `static-pie linked`, no `libfuse2` dependency). Smoke test passed: `./Siphon-0.1.0-x86_64.AppImage --version` → `Siphon 0.1.0`, exit code 0. **Caveat:** host glibc is 2.43, so this locally-built artifact targets glibc ≥ 2.43 and is **not** the release-grade glibc-2.35 build. The official artifact must come from the containerized build (`scripts/build_in_docker.sh`), which will run in CI.
+- **M6 CI Workflows Authored (Session 2):** Created `.github/workflows/test.yml` (pytest matrix on Python 3.11 + 3.12), `build.yml` (containerized `build_in_docker.sh` + `--version` smoke test + artifact upload), and `release.yml` (triggered on `v*` tags; builds, smoke-tests, generates SHA-256 checksums, and publishes to a GitHub Release). Added `tests/test_ci.py` validating workflow structure. All 28 tests pass.
 
 ---
 
 ## 🚧 In Progress
-- **M6 CI & Automated Releases:** Configuring GitHub Actions workflows for automated testing, containerized AppImage builds, and tagged release distribution.
+- **M6 Validation:** CI workflows are written and lint-clean (PyYAML parses, structure verified by `tests/test_ci.py`) but have **not yet run on GitHub**. The glibc-2.35 containerized build and the end-to-end release flow still need a real CI run to confirm.
 
 ---
 
 ## ⏭️ Next Up (M6 Tasks)
-1. **Automated Testing Workflow:** Create `.github/workflows/test.yml` running pytest across Python 3.11 and 3.12.
-2. **Containerized Build Workflow:** Create `.github/workflows/build.yml` executing `scripts/build_in_docker.sh` and publishing AppImage artifact.
-3. **Tagged Release Workflow:** Create `.github/workflows/release.yml` publishing `Siphon-<version>-x86_64.AppImage` and SHA-256 checksums to GitHub Releases on tag push.
-4. **Final Smoke Verification:** Execute verification suite to ensure all milestones and handoff criteria are satisfied.
+1. **First CI Run:** Push to GitHub and confirm `test.yml` (3.11/3.12 matrix) and `build.yml` (containerized build + artifact upload) pass on the hosted runners.
+2. **Container Python Version Parity:** Resolve the `ubuntu:22.04` (Python 3.10) vs `requires-python >= 3.11` discrepancy in `scripts/build_in_docker.sh` — see KNOWN_ISSUES ISSUE-002.
+3. **Tagged Release Dry Run:** Push a `v0.1.0` tag and confirm `release.yml` publishes `Siphon-0.1.0-x86_64.AppImage` + `SHA256SUMS.txt` to the GitHub Release.
+4. **Final Smoke Verification:** Execute the verification suite to ensure all milestones and handoff criteria are satisfied.
 
 ---
 
