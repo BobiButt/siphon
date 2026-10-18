@@ -6,6 +6,7 @@ import sys
 import time
 from typing import Any
 from siphon import __app_name__, __version__
+from siphon.launcher import launch_app
 from siphon.server import SiphonServer
 
 
@@ -45,13 +46,18 @@ def main() -> None:
         sys.stderr.write("Error: For security, Siphon only binds to localhost / 127.0.0.1.\n")
         sys.exit(1)
 
+    if not args.headless:
+        # Launch native desktop pywebview shell on main thread
+        launch_app(host=args.host, port=args.port)
+        return
+
+    # Headless backend mode for testing and debugging
     server = SiphonServer(host=args.host, port=args.port)
     assigned_port = server.start()
     print(f"[{__app_name__}] Server started on http://127.0.0.1:{assigned_port}")
     print(f"[{__app_name__}] Health endpoint available at http://127.0.0.1:{assigned_port}/health")
     print(f"[{__app_name__}] Press Ctrl+C to stop.")
 
-    # Graceful shutdown flag
     running = True
 
     def _signal_handler(sig: int, frame: Any) -> None:

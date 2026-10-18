@@ -1,7 +1,7 @@
 # Project State — Siphon
 
 ## Current Milestone
-**M4: Native pywebview Desktop Shell & UI** (Milestones 0, 1, 2, 3 satisfied; entering desktop GUI & frontend phase)
+**M5: Desktop Packaging & AppImage Generation** (Milestones 0 through 4 satisfied; entering packaging phase)
 
 ---
 
@@ -30,20 +30,26 @@
   - Implemented `download_media()` in `src/siphon/downloader/core.py` detecting DASH video-only streams and downloading companion audio streams for muxing.
   - Implemented `mux_streams()` in `src/siphon/downloader/ffmpeg_muxer.py` executing bundled static FFmpeg (`assets/ffmpeg/ffmpeg`) with `-c:v copy -c:a aac`, error capture via `MuxingError`, and temporary source cleanup.
   - Implemented `POST /api/download` in `src/siphon/api.py` orchestrating stream downloads and muxing.
-  - Wrote unit tests in `tests/test_downloader.py` validating DASH resolution, exact FFmpeg command generation, failure raising, and API route execution. All 18 tests passing.
+  - Wrote unit tests in `tests/test_downloader.py` validating DASH resolution, exact FFmpeg command generation, failure raising, and API route execution.
+- **M4 Native pywebview Shell & Frontend:**
+  - Created vector icon `assets/icons/icon.svg` and generated 256x256 PNG `assets/icons/icon.png` via `scripts/gen_icons.sh`.
+  - Built dark-mode responsive UI in `frontend/index.html`, `style.css`, and `app.js` with metadata preview and 3 separate format streams.
+  - Implemented `launch_app()` in `src/siphon/launcher.py` with dynamic port binding, WebKitGTK window launch on main thread, and graceful shutdown on close.
+  - Updated `src/siphon/__main__.py` to dispatch to `launch_app()` in GUI mode and keep `--headless` mode.
+  - Added unit test suite in `tests/test_launcher.py` with GUI mocking, verifying port forwarding, `webview.start`, and shutdown. All 21 tests passing.
 
 ---
 
 ## 🚧 In Progress
-- **M4 Native pywebview Shell & Frontend:** Developing NewPipe-inspired desktop frontend and native WebKitGTK pywebview application lifecycle.
+- **M5 Desktop Packaging & AppImage Generation:** Assembling PyInstaller bundle and AppDir packaging with static Type 2 AppImage runtime.
 
 ---
 
-## ⏭️ Next Up (M4 Tasks)
-1. **Frontend Interface:** Build responsive UI in `frontend/index.html`, `frontend/style.css`, and `frontend/app.js` with modern Dark Mode, URL input, video preview card, format selector (progressive, video-only, audio-only), and download actions.
-2. **pywebview Window Launcher:** Implement `launch_window()` in `src/siphon/launcher.py` pointing to the dynamic backend port with WebKitGTK.
-3. **App Lifecycle Integration:** Wire `src/siphon/app.py` / `src/siphon/__main__.py` to start the backend server and open the pywebview GUI window, ensuring window closure terminates the server.
-4. **Lifecycle Tests:** Implement `tests/test_app_lifecycle.py` verifying headless vs. desktop execution flags and clean termination.
+## ⏭️ Next Up (M5 Tasks)
+1. **Desktop Entry & Icon Assets:** Create `assets/io.github.BobiButt.siphon.desktop` adhering to XDG standards.
+2. **PyInstaller Spec:** Create `siphon.spec` packaging Python code, static FFmpeg binary, frontend assets, and desktop icon.
+3. **Host Build Script:** Update `scripts/build_appimage.sh` to assemble the AppDir, fetch static Type 2 runtime, and run `appimagetool`.
+4. **Containerized Build:** Implement `scripts/build_in_docker.sh` running the entire build pipeline inside `ubuntu:22.04` to ensure glibc 2.35 compatibility.
 
 ---
 

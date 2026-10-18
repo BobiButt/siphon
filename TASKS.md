@@ -46,13 +46,13 @@ This document tracks all implementation milestones and atomic tasks for Siphon. 
 
 ---
 
-## [ ] Milestone 4: Native pywebview Desktop Shell & UI
-- [ ] Build responsive, modern frontend in `frontend/index.html`, `frontend/style.css`, and `frontend/app.js` (URL input, video card preview, format selector, download manager).
-- [ ] Implement desktop shell launcher in `src/siphon/app.py` combining Uvicorn background server thread with `pywebview.create_window`.
-- [ ] Connect pywebview window lifecycle to server shutdown, ensuring closing the window terminates the Uvicorn process cleanly.
-- [ ] Wire frontend UI events to backend REST endpoints with live progress bars, status indicators, and notification toasts.
-- [ ] Add CLI arguments (`--headless`, `--port`, `--debug`) to `src/siphon/__main__.py` to facilitate automated testing and debugging.
-- [ ] Write test cases in `tests/test_app_lifecycle.py` verifying clean startup and shutdown in headless mode.
+## [x] Milestone 4: Native pywebview Desktop Shell & UI
+- [x] Build responsive, modern dark-themed frontend in `frontend/index.html`, `frontend/style.css`, and `frontend/app.js` (URL input, video card preview, format selector, download manager).
+- [x] Create vector icon `assets/icons/icon.svg` and implement `scripts/gen_icons.sh` generating `assets/icons/icon.png`.
+- [x] Implement desktop shell launcher in `src/siphon/launcher.py` combining Uvicorn background server with `pywebview.create_window` on main thread.
+- [x] Connect pywebview window lifecycle to server shutdown, ensuring closing the window terminates the Uvicorn process cleanly.
+- [x] Update `src/siphon/__main__.py` to dispatch `launch_app()` for GUI mode and preserve `--headless` mode for debugging.
+- [x] Write pytest test suite in `tests/test_launcher.py` verifying URL construction, `webview.start` invocation, and graceful shutdown.
 
 ---
 

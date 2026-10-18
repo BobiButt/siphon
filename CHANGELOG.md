@@ -44,3 +44,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Implemented `mux_streams` in `src/siphon/downloader/ffmpeg_muxer.py` using bundled static FFmpeg with `-c:v copy -c:a aac` and temporary stream file cleanup.
   - Implemented `POST /api/download` in `src/siphon/api.py` orchestrating stream downloads and muxing.
   - Added unit test suite in `tests/test_downloader.py` covering DASH resolution, exact FFmpeg command generation, error handling, and API integration.
+- Session 1 — implemented native pywebview shell and frontend UI:
+  - Created vector icon `assets/icons/icon.svg` and implemented `scripts/gen_icons.sh` generating `assets/icons/icon.png` (256x256).
+  - Built clean, responsive dark-themed frontend in `frontend/index.html`, `frontend/style.css`, and `frontend/app.js` with metadata preview and 3-tier format selection.
+  - Implemented `launch_app` in `src/siphon/launcher.py` integrating dynamic port-0 Uvicorn background server with main-thread pywebview WebKitGTK window.
+  - Connected pywebview window lifecycle to trigger clean server shutdown upon window closure.
+  - Updated `src/siphon/__main__.py` to dispatch to `launch_app` in default GUI mode while retaining `--headless` debugging mode.
+  - Added unit test suite in `tests/test_launcher.py` validating window lifecycle, URL construction, and graceful server teardown.

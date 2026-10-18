@@ -7,19 +7,111 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="app">
-        <header>
-            <h1>Siphon</h1>
-            <p>NewPipe-inspired YouTube Downloader for Linux</p>
+    <div class="app-container">
+        <!-- Top App Bar -->
+        <header class="app-header">
+            <div class="brand">
+                <div class="logo-mark">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                    </svg>
+                </div>
+                <div class="brand-text">
+                    <h1>Siphon</h1>
+                    <span class="version-tag">v0.1.0</span>
+                </div>
+            </div>
+            <div class="header-status" id="header-status">Ready</div>
         </header>
-        <main>
-            <section id="url-input-section">
-                <input type="text" id="url-input" placeholder="Paste YouTube URL here..." autocomplete="off">
-                <button id="extract-btn">Inspect</button>
-            </section>
-            <section id="results-section"></section>
-        </main>
+
+        <!-- URL Input Card -->
+        <section class="card input-card">
+            <div class="input-group">
+                <input
+                    type="url"
+                    id="url-input"
+                    placeholder="Paste YouTube video or shorts URL here..."
+                    autocomplete="off"
+                    spellcheck="false"
+                >
+                <button id="fetch-btn" class="btn btn-primary">
+                    <span class="btn-text">Fetch Info</span>
+                    <span class="spinner hidden" id="fetch-spinner"></span>
+                </button>
+            </div>
+            <div class="output-dir-group">
+                <label for="output-dir-input">Save directory:</label>
+                <input
+                    type="text"
+                    id="output-dir-input"
+                    value="~/Downloads"
+                    placeholder="Download directory path..."
+                >
+            </div>
+        </section>
+
+        <!-- Status Message Banner -->
+        <div id="status-banner" class="status-banner hidden">
+            <div class="status-icon" id="status-icon"></div>
+            <div class="status-content">
+                <p id="status-text"></p>
+            </div>
+        </div>
+
+        <!-- Video Metadata Preview -->
+        <section id="media-preview" class="card media-card hidden">
+            <div class="media-details">
+                <img id="media-thumb" src="" alt="Thumbnail" class="media-thumb">
+                <div class="media-info">
+                    <h2 id="media-title"></h2>
+                    <p class="media-uploader" id="media-uploader"></p>
+                    <div class="media-meta-badges">
+                        <span class="badge" id="media-duration"></span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Stream Formats Sections -->
+        <section id="formats-container" class="formats-container hidden">
+            <!-- Section 1: Progressive -->
+            <div class="format-card">
+                <div class="format-header">
+                    <div class="format-title-group">
+                        <span class="format-pill progressive-pill">Muxed</span>
+                        <h3>Progressive Streams (Video + Audio)</h3>
+                    </div>
+                    <span class="format-desc">Ready to play instantly, up to 720p</span>
+                </div>
+                <div class="format-list" id="progressive-list"></div>
+            </div>
+
+            <!-- Section 2: Video Only (DASH) -->
+            <div class="format-card">
+                <div class="format-header">
+                    <div class="format-title-group">
+                        <span class="format-pill video-pill">DASH</span>
+                        <h3>High-Definition Video (DASH)</h3>
+                    </div>
+                    <span class="format-desc">1080p, 1440p, 4K — automatically muxed with audio via FFmpeg</span>
+                </div>
+                <div class="format-list" id="video-list"></div>
+            </div>
+
+            <!-- Section 3: Audio Only -->
+            <div class="format-card">
+                <div class="format-header">
+                    <div class="format-title-group">
+                        <span class="format-pill audio-pill">Audio</span>
+                        <h3>Audio Only</h3>
+                    </div>
+                    <span class="format-desc">Extract high-bitrate Opus and M4A audio tracks</span>
+                </div>
+                <div class="format-list" id="audio-list"></div>
+            </div>
+        </section>
     </div>
+
     <script src="app.js"></script>
 </body>
 </html>
