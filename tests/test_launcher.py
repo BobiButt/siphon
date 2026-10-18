@@ -18,7 +18,7 @@ def test_launch_app_lifecycle_and_port_forwarding() -> None:
 
         # Order of execution tracker
         execution_order = []
-        mock_webview_start.side_effect = lambda: execution_order.append("webview_started")
+        mock_webview_start.side_effect = lambda *args, **kwargs: execution_order.append("webview_started")
         mock_server.stop.side_effect = lambda: execution_order.append("server_stopped")
 
         # Execute launcher

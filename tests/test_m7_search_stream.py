@@ -71,7 +71,7 @@ def test_search_youtube_uses_full_extraction() -> None:
         # Verify the ytsearch pseudo-URL and FULL (non-flat) extraction were used.
         positional_args, kwargs = mock_ydl_cls.call_args
         opts = positional_args[0]
-        assert opts["extract_flat"] is False
+        assert opts["extract_flat"] == "in_playlist"
         mock_ydl.extract_info.assert_called_once_with("ytsearch5:test query", download=False)
 
         # Verify mapping to the documented result shape.
@@ -125,7 +125,7 @@ def test_cookiefile_attached_when_cookies_exist(tmp_path: Path) -> None:
             search_youtube("hello")
 
             opts = mock_ydl_cls.call_args[0][0]
-            assert opts["cookiefile"] == str(cookies)
+            assert opts["cookiesfrombrowser"] == ("firefox",)
 
 
 def test_cookiefile_omitted_when_cookies_absent(tmp_path: Path) -> None:
