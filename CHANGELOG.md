@@ -29,3 +29,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Created project metadata and configuration (`pyproject.toml`, `requirements.txt`, `.gitignore`, `LICENSE`, `README.md`).
   - Created packaging and setup scripts (`scripts/gen_icons.sh`, `scripts/build_appimage.sh`, `scripts/fetch_ffmpeg.sh`, `scripts/build_in_docker.sh`).
   - Initialized test harness with `tests/test_placeholder.py` verifying package metadata and passing with pytest.
+- Session 1 — implemented dynamic Uvicorn server and health check:
+  - Implemented `SiphonServer` and `start_server()` in `src/siphon/server.py` with programmatic Uvicorn runner, dynamic port-0 binding on `127.0.0.1`, and ephemeral port extraction via socket inspection.
+  - Implemented `create_app()` in `src/siphon/app.py` providing `/health` endpoint and mounting `frontend/` static assets at `/`.
+  - Added CLI entry point in `src/siphon/__main__.py` supporting `--headless` execution, localhost verification, and graceful SIGINT/SIGTERM shutdown.
+  - Added integration test suite in `tests/test_server.py` verifying non-8000 dynamic port assignment, HTTP `/health` JSON response, and clean socket teardown.

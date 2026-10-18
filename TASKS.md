@@ -17,13 +17,13 @@ This document tracks all implementation milestones and atomic tasks for Siphon. 
 
 ---
 
-## [ ] Milestone 1: Backend Core & Dynamic Server
+## [x] Milestone 1: Backend Core & Dynamic Server
 - [x] Initialize project packaging configuration (`pyproject.toml`, `requirements.txt`, `.gitignore`, `LICENSE`, `README.md`).
 - [x] Create core Python package and frontend scaffolding (`src/siphon/`, `frontend/`, `tests/`, `scripts/`).
-- [ ] Implement Uvicorn server launcher binding dynamically to `127.0.0.1:0` and exposing a thread-safe port accessor.
-- [ ] Implement FastAPI application instance with `/api/health` and `/api/version` endpoints returning structured JSON.
-- [ ] Mount frontend static file directory in FastAPI (`/` serving `frontend/index.html`).
-- [ ] Write pytest test suite in `tests/test_server.py` verifying dynamic port assignment, socket accessibility, and health check response.
+- [x] Implement Uvicorn server launcher binding dynamically to `127.0.0.1:0` and exposing a thread-safe port accessor.
+- [x] Implement FastAPI application instance with `/health` endpoint returning structured JSON.
+- [x] Mount frontend static file directory in FastAPI (`/` serving `frontend/index.html`).
+- [x] Write pytest test suite in `tests/test_server.py` verifying dynamic port assignment, socket accessibility, and health check response.
 
 ---
 

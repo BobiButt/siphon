@@ -1,7 +1,7 @@
 # Project State — Siphon
 
 ## Current Milestone
-**M1: Backend Core & Dynamic Server** (Scaffold complete, entering core implementation)
+**M2: yt-dlp Extraction Engine** (Milestone 1 satisfied; preparing extraction engine)
 
 ---
 
@@ -16,20 +16,24 @@
   - Frontend scaffolding established (`frontend/index.html` with `<title>Siphon</title>`, `frontend/style.css`, `frontend/app.js`).
   - Packaging configuration created (`pyproject.toml`, `requirements.txt`, `.gitignore`, `LICENSE`, `README.md`).
   - Scripts stubbed (`scripts/gen_icons.sh`, `scripts/build_appimage.sh`, `scripts/fetch_ffmpeg.sh`, `scripts/build_in_docker.sh`).
-  - Test harness initialized (`tests/__init__.py`, `tests/test_placeholder.py`) with 100% passing pytest run.
+- **M1 Backend Core & Dynamic Server:**
+  - Implemented `SiphonServer` and `start_server` in `src/siphon/server.py` programmatically wrapping Uvicorn on `127.0.0.1:0` and extracting ephemeral port via socket inspection.
+  - Implemented `create_app()` in `src/siphon/app.py` with `/health` endpoint returning `{"status": "ok", "app": "siphon"}` and static file mounting for `frontend/` at `/`.
+  - Implemented CLI runner in `src/siphon/__main__.py` with `--headless` flag, localhost constraint enforcement, and graceful SIGINT/SIGTERM termination.
+  - Created integration test suite in `tests/test_server.py` verifying dynamic port allocation (non-8000), `/health` payload, clean shutdown, and root static file serving. 7/7 tests passing.
 
 ---
 
 ## 🚧 In Progress
-- **M1 Backend Core:** Implementing Uvicorn port-0 server launcher, FastAPI application factory, and dynamic socket port inspection.
+- **M2 yt-dlp Integration:** Integrating yt-dlp Python API to extract YouTube video metadata, thumbnails, progressive formats, and adaptive DASH streams.
 
 ---
 
-## ⏭️ Next Up (M1 Tasks)
-1. **Dynamic Port Uvicorn Server:** Implement thread-safe Uvicorn background runner in `src/siphon/server.py` binding to `127.0.0.1:0` and reading back the kernel-assigned ephemeral port.
-2. **FastAPI Application Setup:** Implement `create_app()` in `src/siphon/app.py` with `/api/health` and `/api/version` endpoints returning application status and metadata.
-3. **Static Frontend Mount:** Mount `frontend/` directory in FastAPI to serve `index.html`, `style.css`, and `app.js` at root `/`.
-4. **Backend Test Suite:** Create `tests/test_server.py` using `pytest` and `httpx` to verify dynamic port binding, socket accessibility, and health responses.
+## ⏭️ Next Up (M2 Tasks)
+1. **yt-dlp Extractor Service:** Implement `src/siphon/extractors/youtube.py` with `yt_dlp.YoutubeDL` options (quiet, extract_flat=False, skip_download=True).
+2. **Metadata & Stream Parsing:** Extract video ID, title, uploader, duration, thumbnail URLs, and split formats into progressive (muxed) vs. adaptive (separate 1080p/4K video and audio).
+3. **Information Endpoint:** Implement FastAPI route `POST /api/info` taking `{"url": "..."}` and returning normalized format options.
+4. **Extractor Test Suite:** Write `tests/test_extractor.py` using recorded yt-dlp responses and mock fixtures for offline testing.
 
 ---
 
