@@ -20,13 +20,9 @@ Distributed as a standalone, zero-dependency `x86_64` AppImage with seamless des
 
 ---
 
-## Distribution & Compatibility
+## Runtime Dependencies
 
-Siphon targets `x86_64` Linux distributions with **glibc >= 2.35** (Ubuntu 22.04 LTS baseline).
-
-### Host System Dependencies
-
-Siphon requires GTK 3 and WebKit2GTK on the host system to render the native desktop interface:
+While the Siphon AppImage bundles Python, all application code, and a static build of FFmpeg, the user's host system must have **GTK 3 and WebKit2GTK** installed to render the native desktop GUI (this is standard for any `pywebview` application):
 
 - **Fedora / RHEL / CentOS (including Silverblue / Kinoite):**
   ```bash
@@ -43,7 +39,7 @@ Siphon requires GTK 3 and WebKit2GTK on the host system to render the native des
   sudo pacman -S python-gobject gtk3 webkit2gtk
   ```
 
-*Note: Alpine Linux and other musl-libc based environments are not supported.*
+*Note: Siphon targets `x86_64` Linux distributions with glibc >= 2.35 (Ubuntu 22.04 LTS baseline). Alpine Linux and other musl-libc based systems are not supported.*
 
 ---
 

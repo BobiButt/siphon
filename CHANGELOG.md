@@ -51,3 +51,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Connected pywebview window lifecycle to trigger clean server shutdown upon window closure.
   - Updated `src/siphon/__main__.py` to dispatch to `launch_app` in default GUI mode while retaining `--headless` debugging mode.
   - Added unit test suite in `tests/test_launcher.py` validating window lifecycle, URL construction, and graceful server teardown.
+- Session 1 — implemented PyInstaller packaging and AppImage build script:
+  - Configured `Siphon.spec` in ONEDIR mode bundling frontend and icon datas, with explicit hidden imports for Uvicorn, FastAPI, and Pydantic.
+  - Implemented `scripts/build_appimage.sh` assembling standard AppDir hierarchy, desktop entry, AppRun, bundled static FFmpeg, and embedding static Type 2 runtime (`--runtime-file`).
+  - Created XDG desktop entry `assets/io.github.BobiButt.siphon.desktop`.
+  - Implemented `scripts/build_in_docker.sh` for reproducible Ubuntu 22.04 containerized compilation.
+  - Documented host Runtime Dependencies in `README.md` and `DEV_SETUP.md`.
+  - Added unit tests in `tests/test_packaging.py` verifying build failure handling, spec hidden imports, and desktop entry fields.

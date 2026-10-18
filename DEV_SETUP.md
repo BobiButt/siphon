@@ -4,12 +4,12 @@ This guide provides instructions for setting up a local development environment,
 
 ---
 
-## 1. System Requirements & Compatibility
+## 1. System Requirements & Runtime Dependencies
 
 - **Architecture:** `x86_64` Linux
 - **C Library:** GNU C Library (`glibc`) version 2.35 or newer (Ubuntu 22.04 LTS baseline).
 - **Python Version:** Python 3.11+
-- **Desktop Runtime Dependencies:** GTK 3 and WebKit2GTK are required for `pywebview` native desktop rendering.
+- **Runtime Dependencies:** While the Siphon AppImage bundles Python and static FFmpeg, the host system must have GTK 3 and WebKit2GTK installed for `pywebview` native desktop rendering (standard for any WebKitGTK desktop shell).
 - **Unsupported Systems:** Alpine Linux and other musl-libc based distributions are explicitly unsupported.
 
 ### Install Host System Dependencies

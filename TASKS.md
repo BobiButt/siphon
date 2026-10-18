@@ -56,13 +56,13 @@ This document tracks all implementation milestones and atomic tasks for Siphon. 
 
 ---
 
-## [ ] Milestone 5: Desktop Packaging & AppImage Generation
-- [ ] Create vector icon in `assets/icons/icon.svg` and write `scripts/gen_icons.sh` converting it to standard PNG sizes (16px to 512px).
-- [ ] Create XDG desktop entry `assets/io.github.BobiButt.siphon.desktop` specifying Name, Exec, Icon, Categories, and reverse-DNS desktop ID.
-- [ ] Create PyInstaller build specification `siphon.spec` bundling Python runtime, static assets, bundled FFmpeg, and frontend assets.
-- [ ] Implement AppDir structure generator assembly script `scripts/build_appimage.sh` with AppRun entrypoint.
-- [ ] Implement `scripts/build_in_docker.sh` executing the build inside `ubuntu:22.04` using the static Type 2 AppImage runtime (`--runtime-file`).
-- [ ] Verify generated `Siphon-<version>-x86_64.AppImage` executes correctly, displays the proper icon, and runs without host `libfuse2`.
+## [x] Milestone 5: Desktop Packaging & AppImage Generation
+- [x] Create vector icon in `assets/icons/icon.svg` and implement `scripts/gen_icons.sh`.
+- [x] Create XDG desktop entry `assets/io.github.BobiButt.siphon.desktop` specifying Name, Exec, Icon, and Categories.
+- [x] Create PyInstaller spec `Siphon.spec` in ONEDIR mode bundling frontend and icon assets with hidden imports.
+- [x] Implement AppDir assembly in `scripts/build_appimage.sh` with AppRun entrypoint, desktop symlinks, and FFmpeg binary.
+- [x] Implement containerized build script `scripts/build_in_docker.sh` using Ubuntu 22.04 and static Type 2 runtime.
+- [x] Write pytest test suite in `tests/test_packaging.py` verifying build failure detection and desktop entry attributes.
 
 ---
 

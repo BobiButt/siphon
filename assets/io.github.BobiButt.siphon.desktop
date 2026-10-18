@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Siphon
+Exec=siphon
+Icon=siphon
+Type=Application
+Categories=AudioVideo;Video;
+Comment=NewPipe-like YouTube media downloader for Linux
+Terminal=false
+StartupNotify=true
+StartupWMClass=Siphon

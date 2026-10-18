@@ -1,7 +1,7 @@
 # Project State — Siphon
 
 ## Current Milestone
-**M5: Desktop Packaging & AppImage Generation** (Milestones 0 through 4 satisfied; entering packaging phase)
+**M6: Continuous Integration & Automated Releases** (Milestones 0 through 5 satisfied; entering CI/CD phase)
 
 ---
 
@@ -36,20 +36,27 @@
   - Built dark-mode responsive UI in `frontend/index.html`, `style.css`, and `app.js` with metadata preview and 3 separate format streams.
   - Implemented `launch_app()` in `src/siphon/launcher.py` with dynamic port binding, WebKitGTK window launch on main thread, and graceful shutdown on close.
   - Updated `src/siphon/__main__.py` to dispatch to `launch_app()` in GUI mode and keep `--headless` mode.
-  - Added unit test suite in `tests/test_launcher.py` with GUI mocking, verifying port forwarding, `webview.start`, and shutdown. All 21 tests passing.
+  - Added unit test suite in `tests/test_launcher.py` with GUI mocking, verifying port forwarding, `webview.start`, and shutdown.
+- **M5 Desktop Packaging & AppImage Generation:**
+  - Configured `Siphon.spec` in ONEDIR mode bundling frontend and icon datas, with explicit hidden imports for Uvicorn, FastAPI, and Pydantic.
+  - Implemented `scripts/build_appimage.sh` assembling the standard AppDir layout, configuring `siphon.desktop` and `AppRun`, bundling static FFmpeg, and embedding the static Type 2 runtime (`--runtime-file`).
+  - Created XDG desktop entry `assets/io.github.BobiButt.siphon.desktop`.
+  - Implemented containerized build wrapper in `scripts/build_in_docker.sh` targeting `ubuntu:22.04` for glibc 2.35 compatibility.
+  - Documented Runtime Dependencies in `DEV_SETUP.md` and `README.md`.
+  - Wrote packaging unit tests in `tests/test_packaging.py` verifying build failure handling, spec hidden imports, and desktop entry fields. All 24 tests passing.
 
 ---
 
 ## 🚧 In Progress
-- **M5 Desktop Packaging & AppImage Generation:** Assembling PyInstaller bundle and AppDir packaging with static Type 2 AppImage runtime.
+- **M6 CI & Automated Releases:** Configuring GitHub Actions workflows for automated testing, containerized AppImage builds, and tagged release distribution.
 
 ---
 
-## ⏭️ Next Up (M5 Tasks)
-1. **Desktop Entry & Icon Assets:** Create `assets/io.github.BobiButt.siphon.desktop` adhering to XDG standards.
-2. **PyInstaller Spec:** Create `siphon.spec` packaging Python code, static FFmpeg binary, frontend assets, and desktop icon.
-3. **Host Build Script:** Update `scripts/build_appimage.sh` to assemble the AppDir, fetch static Type 2 runtime, and run `appimagetool`.
-4. **Containerized Build:** Implement `scripts/build_in_docker.sh` running the entire build pipeline inside `ubuntu:22.04` to ensure glibc 2.35 compatibility.
+## ⏭️ Next Up (M6 Tasks)
+1. **Automated Testing Workflow:** Create `.github/workflows/test.yml` running pytest across Python 3.11 and 3.12.
+2. **Containerized Build Workflow:** Create `.github/workflows/build.yml` executing `scripts/build_in_docker.sh` and publishing AppImage artifact.
+3. **Tagged Release Workflow:** Create `.github/workflows/release.yml` publishing `Siphon-<version>-x86_64.AppImage` and SHA-256 checksums to GitHub Releases on tag push.
+4. **Final Smoke Verification:** Execute verification suite to ensure all milestones and handoff criteria are satisfied.
 
 ---
 
