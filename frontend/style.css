@@ -653,3 +653,231 @@ input[type="search"]::-webkit-search-cancel-button {
         flex-direction: column;
     }
 }
+/* Container for uploader and date */
+.result-meta-container {
+    display: flex;
+    align-items: center;
+    font-size: 0.85em;
+    color: #888;
+    margin-top: 4px;
+}
+
+/* Uploader text styling */
+.result-uploader {
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Date styling */
+.result-date {
+    margin-left: 6px;
+    white-space: nowrap;
+}
+/* --- Loading Spinners --- */
+.btn-spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: #fff;
+    animation: spin 0.8s linear infinite;
+    vertical-align: middle;
+    margin-right: 6px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* --- Player Quality Badge --- */
+#player-quality-badge {
+    position: absolute;
+    bottom: 16px;
+    right: 16px;
+    background: rgba(0, 0, 0, 0.8);
+    color: #fff;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 0.85em;
+    pointer-events: none;
+    border: 1px solid rgba(255,255,255,0.2);
+}
+
+/* --- Search Result Meta --- */
+.result-meta-container {
+    display: flex;
+    align-items: center;
+    font-size: 0.85em;
+    color: #888;
+    margin-top: 4px;
+}
+
+.result-uploader {
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.result-date {
+    margin-left: 6px;
+    white-space: nowrap;
+}
+/* --- App Logo --- */
+.app-logo {
+    height: 40px; /* Adjust this to make it bigger or smaller */
+    width: 40px;
+    border-radius: 8px; /* Gives it nice rounded corners */
+    object-fit: contain;
+    vertical-align: middle;
+    margin-right: 10px;
+}
+/* --- Player Quality Dropdown --- */
+.player-header {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    background: #1a1a1a;
+    padding: 10px 16px;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+    border-bottom: 1px solid #333;
+}
+
+.player-header label {
+    margin-right: 10px;
+    font-size: 0.9em;
+    color: #aaa;
+}
+
+.quality-dropdown {
+    background: #2a2a2a;
+    color: #fff;
+    border: 1px solid #444;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    cursor: pointer;
+    outline: none;
+}
+
+.quality-dropdown:focus {
+    border-color: #7c3aed; /* Or your primary color */
+}
+
+.quality-dropdown:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+/* --- Video Player Fixes --- */
+#player-section {
+    margin-top: 24px;
+    background: #1a1a1a;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    position: relative;
+}
+
+#video-player {
+    width: 100%;
+    max-height: 480px; /* This prevents the giant stretching */
+    background: #000;
+    display: block;
+    outline: none;
+}
+
+.player-header {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    background: #222;
+    padding: 10px 16px;
+    border-bottom: 1px solid #333;
+}
+
+.player-header label {
+    margin-right: 10px;
+    font-size: 0.9em;
+    color: #aaa;
+}
+
+.quality-dropdown {
+    background: #2a2a2a;
+    color: #fff;
+    border: 1px solid #444;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    cursor: pointer;
+    outline: none;
+}
+
+.quality-dropdown:focus {
+    border-color: #7c3aed;
+}
+
+.quality-dropdown:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+#player-quality-badge {
+    position: absolute;
+    bottom: 16px;
+    right: 16px;
+    background: rgba(0, 0, 0, 0.8);
+    color: #fff;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 0.85em;
+    pointer-events: none;
+    border: 1px solid rgba(255,255,255,0.2);
+}
+/* Add this to the bottom of style.css */
+
+#video-player {
+    width: 100%;
+    max-height: 480px;
+    background: #000;
+    display: block;
+}
+
+/* --- Blurred Loading Overlay --- */
+.overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(15, 23, 42, 0.7); /* Dark semi-transparent background */
+    backdrop-filter: blur(8px); /* The blur effect */
+    -webkit-backdrop-filter: blur(8px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.overlay.hidden {
+    display: none;
+}
+
+.overlay-content {
+    text-align: center;
+    color: #fff;
+}
+
+.large-spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid rgba(255,255,255,0.2);
+    border-top-color: #7c3aed; /* Your primary color */
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 16px auto;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}

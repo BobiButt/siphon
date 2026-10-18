@@ -80,3 +80,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Format-list scroll fix:** `.format-list` capped at `max-height: 300px` with `overflow-y: auto` and a styled scrollbar, resolving the unbounded "loooooooooong div."
 - **Icon pipeline:** `scripts/gen_icons.sh` rewritten to square-pad-scale the new raster `icon.png` (300×294 → distortion-free 16/32/48/64/128/256/512 set); `.desktop` entry updated for the YouTube-clone positioning (Comment/Keywords/Categories).
 - Version bumped to **0.2.0**; `tests/test_m7_search_stream.py` added (search/stream/FFmpeg unit + endpoint coverage). Suite now totals 41 passing tests.
+
+### Session 4 — 2026-10-18 (Bot-check cookie support & search thumbnails)
+#### Fixed
+- **YouTube bot check:** Added cookie support to all yt-dlp call sites in `ytdlp_extractor.py` (`extract_video_info`, `search_youtube`, `extract_stream_url`) via a shared `_build_ydl_opts()` helper. When `~/.config/siphon/cookies.txt` exists it is passed as yt-dlp's `cookiefile`; when absent, yt-dlp runs without it. The "Sign in to confirm you're not a bot" error is now detected specifically and re-raised as a clear `ExtractionError` pointing the user to the cookies file path and the "Get cookies.txt LOCALLY" extension.
+- **Missing search thumbnails:** `search_youtube` now uses `extract_flat=False` (was `True`) so yt-dlp resolves full metadata, guaranteeing thumbnails and durations populate the results grid correctly (slightly slower, required for a YouTube-like UI).
+- **Documentation:** Added a "Fixing the 'Sign in to confirm you're not a bot' error" section to `README.md` and `DEV_SETUP.md` covering extension install, YouTube login, cookie export, and saving to `~/.config/siphon/cookies.txt`.
+- **Tests:** Updated the search extraction assertion (`extract_flat is False`) and added coverage for cookiefile present/absent, bot-error guidance (search + info), and non-bot error message preservation. Suite now totals 46 passing tests.

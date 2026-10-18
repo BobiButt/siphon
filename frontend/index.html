@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Siphon</title>
+    <link rel="icon" type="image/png" href="icon.png">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -11,10 +12,8 @@
         <!-- Top App Bar -->
         <header class="app-header">
             <div class="brand">
-                <div class="logo-mark">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-                    </svg>
+                <div class="">
+                    <img src="icon.png" alt="Siphon Logo" class="app-logo">
                 </div>
                 <div class="brand-text">
                     <h1>Siphon</h1>
@@ -28,9 +27,7 @@
         <section class="card search-card">
             <div class="search-group">
                 <div class="search-field">
-                    <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/>
-                    </svg>
+                    <img class="search-icon" src="icon.png" alt="Siphon Logo" >
                     <input
                         type="search"
                         id="search-input"
@@ -41,7 +38,6 @@
                 </div>
                 <button id="search-btn" class="btn btn-primary">
                     <span class="btn-text">Search</span>
-                    <span class="spinner hidden" id="search-spinner"></span>
                 </button>
             </div>
             <div class="direct-url-row">
@@ -84,7 +80,15 @@
 
         <!-- HTML5 Video Player -->
         <section id="player-section" class="card player-card hidden">
+            <div class="player-header">
+                <label for="stream-quality-select">Stream Quality:</label>
+                <select id="stream-quality-select" class="quality-dropdown">
+                    <option value="">Auto (Default)</option>
+                </select>
+            </div>
+            
             <video id="video-player" class="video-player" controls preload="metadata"></video>
+            
             <p id="player-fallback" class="player-fallback hidden">
                 Streaming requires muxed audio/video. This video has no progressive
                 (video+audio) stream — use a DASH download below instead.
@@ -107,7 +111,6 @@
 
         <!-- Stream Formats Sections -->
         <section id="formats-container" class="formats-container hidden">
-            <!-- Section 1: Progressive -->
             <div class="format-card">
                 <div class="format-header">
                     <div class="format-title-group">
@@ -119,7 +122,6 @@
                 <div class="format-list" id="progressive-list"></div>
             </div>
 
-            <!-- Section 2: Video Only (DASH) -->
             <div class="format-card">
                 <div class="format-header">
                     <div class="format-title-group">
@@ -131,7 +133,6 @@
                 <div class="format-list" id="video-list"></div>
             </div>
 
-            <!-- Section 3: Audio Only -->
             <div class="format-card">
                 <div class="format-header">
                     <div class="format-title-group">
@@ -143,6 +144,14 @@
                 <div class="format-list" id="audio-list"></div>
             </div>
         </section>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="overlay hidden">
+        <div class="overlay-content">
+            <div class="large-spinner"></div>
+            <p>Fetching video details...</p>
+        </div>
     </div>
 
     <script src="app.js"></script>

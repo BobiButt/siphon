@@ -55,8 +55,12 @@ MOCK_SEARCH_RESULTS = [
 ]
 
 
-def test_search_youtube_uses_flat_extraction() -> None:
-    """search_youtube uses ytsearch<N>: with extract_flat=True and maps entries."""
+def test_search_youtube_uses_full_extraction() -> None:
+    """search_youtube uses ytsearch<N>: with extract_flat=False and maps entries.
+
+    extract_flat=False forces yt-dlp to resolve full metadata so thumbnails and
+    durations are reliably populated for the results grid.
+    """
     with patch("yt_dlp.YoutubeDL") as mock_ydl_cls:
         mock_ydl = MagicMock()
         mock_ydl.extract_info.return_value = MOCK_SEARCH_RAW
@@ -64,10 +68,10 @@ def test_search_youtube_uses_flat_extraction() -> None:
 
         results = search_youtube("test query", limit=5)
 
-        # Verify the ytsearch pseudo-URL and flat extraction option were used.
+        # Verify the ytsearch pseudo-URL and FULL (non-flat) extraction were used.
         positional_args, kwargs = mock_ydl_cls.call_args
         opts = positional_args[0]
-        assert opts["extract_flat"] is True
+        assert opts["extract_flat"] is False
         mock_ydl.extract_info.assert_called_once_with("ytsearch5:test query", download=False)
 
         # Verify mapping to the documented result shape.
@@ -105,6 +109,91 @@ def test_search_youtube_download_error_wrapped() -> None:
             raise AssertionError("Expected ExtractionError")
         except ExtractionError as exc:
             assert "Search failed" in str(exc)
+
+
+def test_cookiefile_attached_when_cookies_exist(tmp_path: Path) -> None:
+    """_build_ydl_opts passes cookiefile to yt-dlp when cookies.txt exists."""
+    cookies = tmp_path / "cookies.txt"
+    cookies.write_text("# Netscape HTTP Cookie File\n")
+
+    with patch("siphon.extractors.ytdlp_extractor.get_cookies_path", return_value=cookies):
+        with patch("yt_dlp.YoutubeDL") as mock_ydl_cls:
+            mock_ydl = MagicMock()
+            mock_ydl.extract_info.return_value = MOCK_SEARCH_RAW
+            mock_ydl_cls.return_value.__enter__.return_value = mock_ydl
+
+            search_youtube("hello")
+
+            opts = mock_ydl_cls.call_args[0][0]
+            assert opts["cookiefile"] == str(cookies)
+
+
+def test_cookiefile_omitted_when_cookies_absent(tmp_path: Path) -> None:
+    """_build_ydl_opts omits cookiefile when cookies.txt does not exist."""
+    missing = tmp_path / "no_such_cookies.txt"
+
+    with patch("siphon.extractors.ytdlp_extractor.get_cookies_path", return_value=missing):
+        with patch("yt_dlp.YoutubeDL") as mock_ydl_cls:
+            mock_ydl = MagicMock()
+            mock_ydl.extract_info.return_value = MOCK_SEARCH_RAW
+            mock_ydl_cls.return_value.__enter__.return_value = mock_ydl
+
+            search_youtube("hello")
+
+            opts = mock_ydl_cls.call_args[0][0]
+            assert "cookiefile" not in opts
+
+
+def test_bot_check_error_raises_cookie_guidance() -> None:
+    """A 'not a bot' DownloadError maps to the exact cookie guidance message."""
+    from siphon.extractors.ytdlp_extractor import BOT_CHECK_GUIDANCE
+
+    with patch("yt_dlp.YoutubeDL") as mock_ydl_cls:
+        mock_ydl = MagicMock()
+        mock_ydl.extract_info.side_effect = DownloadError(
+            "Sign in to confirm you're not a bot. This helps protect our community."
+        )
+        mock_ydl_cls.return_value.__enter__.return_value = mock_ydl
+
+        try:
+            search_youtube("anything")
+            raise AssertionError("Expected ExtractionError")
+        except ExtractionError as exc:
+            assert str(exc) == BOT_CHECK_GUIDANCE
+            assert "cookies.txt" in str(exc)
+
+
+def test_bot_check_error_in_video_info_raises_cookie_guidance() -> None:
+    """extract_video_info also surfaces cookie guidance on the bot check."""
+    from siphon.extractors.ytdlp_extractor import BOT_CHECK_GUIDANCE
+
+    with patch("yt_dlp.YoutubeDL") as mock_ydl_cls:
+        mock_ydl = MagicMock()
+        mock_ydl.extract_info.side_effect = DownloadError(
+            "youtube said: Sign in to confirm you're not a bot"
+        )
+        mock_ydl_cls.return_value.__enter__.return_value = mock_ydl
+
+        try:
+            extract_video_info("https://www.youtube.com/watch?v=abc")
+            raise AssertionError("Expected ExtractionError")
+        except ExtractionError as exc:
+            assert str(exc) == BOT_CHECK_GUIDANCE
+
+
+def test_non_bot_error_keeps_context_message() -> None:
+    """Non-bot DownloadErrors retain their contextual prefix (not the cookie message)."""
+    with patch("yt_dlp.YoutubeDL") as mock_ydl_cls:
+        mock_ydl = MagicMock()
+        mock_ydl.extract_info.side_effect = DownloadError("Video unavailable")
+        mock_ydl_cls.return_value.__enter__.return_value = mock_ydl
+
+        try:
+            extract_video_info("https://www.youtube.com/watch?v=abc")
+            raise AssertionError("Expected ExtractionError")
+        except ExtractionError as exc:
+            assert "Failed to extract video information" in str(exc)
+            assert "cookies.txt" not in str(exc)
 
 
 def test_info_includes_stream_url_for_progressive() -> None:

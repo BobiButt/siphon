@@ -9,7 +9,7 @@ TARGET_BIN="${TARGET_DIR}/ffmpeg"
 
 # Pinned BtbN FFmpeg Release (Linux x86_64 GPL Static)
 FFMPEG_TAG="latest"
-FFMPEG_ARCHIVE="ffmpeg-n7.1-latest-linux64-gpl-7.1.tar.xz"
+FFMPEG_ARCHIVE="ffmpeg-master-latest-linux64-gpl.tar.xz"
 FFMPEG_URL="https://github.com/BtbN/FFmpeg-Builds/releases/download/${FFMPEG_TAG}/${FFMPEG_ARCHIVE}"
 
 if [[ -f "${TARGET_BIN}" && -x "${TARGET_BIN}" ]]; then

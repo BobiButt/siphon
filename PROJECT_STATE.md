@@ -51,11 +51,12 @@
 - **M7 Streaming (Session 3):** `stream_url` (best progressive direct URL) added to `/api/info`; new `extract_stream_url()` + `GET /api/stream?url=...`. FFmpeg availability check (`ffmpeg_available` / `check_ffmpeg_or_warn`) logs a clear startup warning from `create_app()`.
 - **M7 YouTube-Clone UI (Session 3):** Search bar (Enter-to-search), responsive CSS-grid results, click-to-load info, HTML5 `<video>` player with the "Streaming requires muxed audio/video" fallback, and the `.format-list` "long div" bug fixed via `max-height: 300px` + `overflow-y: auto`.
 - **M7 Icon + Version (Session 3):** `gen_icons.sh` rewritten to square-pad-scale the new raster `icon.png` (300×294 → distortion-free 16–512 set); `.desktop` refreshed; version bumped to 0.2.0. New suite `tests/test_m7_search_stream.py`. **All 41 tests passing.**
+- **Bot-Check Cookie Support & Search Thumbnail Fix (Session 4):** All yt-dlp call sites now use `_build_ydl_opts()`, attaching `cookiefile` when `~/.config/siphon/cookies.txt` exists; the "Sign in to confirm you're not a bot" error is caught specifically and surfaced as clear guidance. `search_youtube` switched to `extract_flat=False` so thumbnails/durations populate correctly. Cookie workaround documented in `README.md` and `DEV_SETUP.md`. **All 46 tests passing.**
 
 ---
 
 ## 🚧 In Progress
-- **Awaiting Local Test (M7):** The YouTube-clone pivot is implemented and committed. The user will test locally (`python -m siphon`) before we run the final AppImage build.
+- **Awaiting Local Test (M7):** The YouTube-clone pivot plus the bot-check/thumbnail fixes are implemented and committed. The user will test locally (`python -m siphon`) before we run the final AppImage build.
 
 ---
 

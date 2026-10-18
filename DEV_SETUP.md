@@ -105,6 +105,28 @@ pytest -v --cov=src/siphon tests/
 
 ---
 
+## 5.1 Fixing the "Sign in to confirm you're not a bot" error
+
+YouTube may block automated extraction with an error such as **"Sign in to confirm you're not a bot."** Siphon supports sending your own YouTube session cookies to yt-dlp to bypass this check.
+
+Setup:
+
+1. Install a cookie-export browser extension, e.g. **"Get cookies.txt LOCALLY"** (Chrome/Firefox).
+2. Log in to YouTube in that browser.
+3. Export the cookies for `youtube.com` in Netscape `cookies.txt` format.
+4. Place the exported file at:
+   ```bash
+   mkdir -p ~/.config/siphon
+   mv ~/Downloads/cookies.txt ~/.config/siphon/cookies.txt
+   ```
+5. Restart the app.
+
+**How it works in code:** `src/siphon/extractors/ytdlp_extractor.py` exposes `get_cookies_path()` (resolves to `~/.config/siphon/cookies.txt`) and `_build_ydl_opts()`, which adds yt-dlp's `cookiefile` option only when the file exists. If the file is absent, yt-dlp runs without cookies. When yt-dlp reports the bot-check error, Siphon raises a clear `ExtractionError` pointing the user to this file.
+
+> ⚠️ The cookies file is sensitive (it carries your login session). Keep it out of version control and never share it.
+
+---
+
 ## 6. Building the AppImage
 
 ### Reference Build (Recommended: Inside Docker)

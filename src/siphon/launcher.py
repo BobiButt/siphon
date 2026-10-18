@@ -1,45 +1,62 @@
 """pywebview desktop shell launcher for Siphon."""
 
+import os
+import subprocess
+import time
+import sys
+from pathlib import Path
 import webview
 from siphon.server import SiphonServer
 
+# Force Qt backend and tell it to use PyQt5's bundled codecs
+os.environ["PYWEBVIEW_GUI"] = "qt"
+os.environ["QT_API"] = "pyqt5"
 
-def launch_app(
-    host: str = "127.0.0.1",
-    port: int = 0,
-    title: str = "Siphon",
-    width: int = 1060,
-    height: int = 760,
-) -> None:
-    """Launch the Siphon desktop application shell.
+from PyQt5.QtGui import QIcon
+from PyQt5.QtWidgets import QApplication
 
-    1. Starts the Uvicorn server in a background daemon thread bound dynamically to port 0 on 127.0.0.1.
-    2. Waits for dynamic port assignment from the OS kernel.
-    3. Creates a pywebview window pointing to http://127.0.0.1:<port> with native WebKitGTK.
-    4. Calls webview.start() on the main thread (blocking until window is closed).
-    5. Cleanly triggers server shutdown when the window is closed.
+APP_ID = "io.github.BobiButt.siphon"
 
-    Note: no window icon is passed to pywebview because its ``create_window`` API does not
-    accept an ``icon`` argument. Desktop icon integration is handled by the AppImage and
-    the XDG ``.desktop`` entry instead.
-    """
-    # Start background Uvicorn server with dynamic port 0
+def _setup_wayland_icon():
+    icon_path = Path(__file__).resolve().parents[2] / "assets" / "icons" / "icon.png"
+    if not icon_path.exists(): return None
+    
+    desktop_dir = Path.home() / ".local" / "share" / "applications"
+    desktop_dir.mkdir(parents=True, exist_ok=True)
+    desktop_file = desktop_dir / f"{APP_ID}.desktop"
+    content = f"""[Desktop Entry]\nName=Siphon\nExec=siphon\nIcon={icon_path.absolute()}\nType=Application\nCategories=AudioVideo;Video;\n"""
+    desktop_file.write_text(content)
+    return str(icon_path)
+
+def launch_app(host: str = "127.0.0.1", port: int = 0, title: str = "Siphon", width: int = 1060, height: int = 760) -> None:
+    icon_str = _setup_wayland_icon()
+
+    base_path = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parents[2]))
+    pot_bin = base_path / "assets" / "bin" / "bgutil-pot"
+    
+    pot_process = None
+    if pot_bin.exists():
+        pot_process = subprocess.Popen([str(pot_bin), "server", "--port", "4416"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        time.sleep(1)
+
     server = SiphonServer(host=host, port=port)
     assigned_port = server.start()
     app_url = f"http://{host}:{assigned_port}"
 
-    try:
-        # Create desktop window (intentionally no icon kwarg: unsupported by pywebview)
-        webview.create_window(
-            title=title,
-            url=app_url,
-            width=width,
-            height=height,
-            min_size=(720, 520),
-        )
+    def set_icon(window):
+        app = QApplication.instance()
+        if app:
+            app.setDesktopFileName(APP_ID)
+            if icon_str:
+                icon = QIcon(icon_str)
+                app.setWindowIcon(icon)
+                for widget in app.topLevelWidgets():
+                    widget.setWindowIcon(icon)
 
-        # Start native desktop window event loop on main thread
-        webview.start()
+    try:
+        window = webview.create_window(title=title, url=app_url, width=width, height=height, min_size=(720, 520))
+        webview.start(func=set_icon, args=window)
     finally:
-        # Gracefully stop Uvicorn server when GUI window closes
         server.stop()
+        if pot_process:
+            pot_process.terminate()

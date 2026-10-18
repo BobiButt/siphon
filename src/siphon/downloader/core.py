@@ -46,29 +46,34 @@ class DownloadResult(dict):
         yield self["audio_path"]
 
 
+def _get_dl_base_opts() -> Dict[str, Any]:
+    """Base yt-dlp options required to bypass YouTube bot checks."""
+    return {
+        "quiet": True,
+        "no_warnings": True,
+        "cachedir": False,
+        "ignoreerrors": True,
+        "remote_components": ["ejs:github"],
+        "extractor_args": {
+            "youtube": {
+                "player_client": ["mweb", "tv", "web_safari"],
+                "fetch_pot": ["always"],
+            },
+            "youtubepot-bgutilhttp": {
+                "base_url": ["http://127.0.0.1:4416"],
+            },
+        },
+        "cookiesfrombrowser": ("firefox",),
+    }
+
+
 def download_media(
     url: str,
     format_id: str,
     output_dir: Union[str, Path],
     temp_dir: Optional[Union[str, Path]] = None,
 ) -> DownloadResult:
-    """Download requested media format(s) using yt-dlp to a temporary location.
-
-    If format_id corresponds to a DASH video-only stream, automatically identifies
-    and downloads a complementary high-quality audio stream for subsequent muxing.
-
-    Args:
-        url: YouTube media URL.
-        format_id: Chosen format ID from extractor info.
-        output_dir: Destination directory for media.
-        temp_dir: Directory used for staging stream files.
-
-    Returns:
-        DownloadResult containing paths to downloaded stream(s).
-
-    Raises:
-        ExtractionError: If media metadata cannot be retrieved or downloads fail.
-    """
+    """Download requested media format(s) using yt-dlp to a temporary location."""
     if not url or not format_id:
         raise ExtractionError("URL and format_id are required for download.")
 
@@ -76,12 +81,11 @@ def download_media(
     staging_dir.mkdir(parents=True, exist_ok=True)
 
     # Step 1: Query formats to determine stream type (progressive vs DASH vs audio-only)
-    ydl_meta_opts = {
-        "quiet": True,
-        "no_warnings": True,
+    ydl_meta_opts = _get_dl_base_opts()
+    ydl_meta_opts.update({
         "extract_flat": False,
         "skip_download": True,
-    }
+    })
 
     try:
         with yt_dlp.YoutubeDL(ydl_meta_opts) as ydl:
@@ -106,9 +110,7 @@ def download_media(
     # Identify if format is DASH video-only (needs audio companion)
     is_dash_video = bool(vcodec and vcodec != "none" and (not acodec or acodec == "none"))
 
-    # If requested format wasn't explicitly found in format list, heuristic check
     if requested_fmt is None and format_id not in ("ba", "bestaudio", "140", "251"):
-        # Assume DASH if requested format indicates high resolution video without audio
         is_dash_video = True
 
     if is_dash_video:
@@ -126,22 +128,20 @@ def download_media(
         audio_path = staging_dir / f"{video_id}_{audio_format_id}_audio.{audio_ext}"
 
         # Download video stream
-        ydl_v_opts = {
-            "quiet": True,
-            "no_warnings": True,
-            "format": str(format_id),
+        ydl_v_opts = _get_dl_base_opts()
+        ydl_v_opts.update({
+            "format": f"{format_id}/bestvideo",  # Fallback if specific ID fails
             "outtmpl": str(video_path),
-        }
+        })
         with yt_dlp.YoutubeDL(ydl_v_opts) as ydl_v:
             ydl_v.download([url])
 
         # Download audio stream
-        ydl_a_opts = {
-            "quiet": True,
-            "no_warnings": True,
+        ydl_a_opts = _get_dl_base_opts()
+        ydl_a_opts.update({
             "format": str(audio_format_id),
             "outtmpl": str(audio_path),
-        }
+        })
         with yt_dlp.YoutubeDL(ydl_a_opts) as ydl_a:
             ydl_a.download([url])
 
@@ -159,12 +159,11 @@ def download_media(
     file_ext = (requested_fmt.get("ext") if requested_fmt else None) or ("m4a" if is_audio_only else "mp4")
     dest_path = staging_dir / f"{video_id}_{format_id}.{file_ext}"
 
-    ydl_single_opts = {
-        "quiet": True,
-        "no_warnings": True,
-        "format": str(format_id),
+    ydl_single_opts = _get_dl_base_opts()
+    ydl_single_opts.update({
+        "format": f"{format_id}/best",
         "outtmpl": str(dest_path),
-    }
+    })
     with yt_dlp.YoutubeDL(ydl_single_opts) as ydl_s:
         ydl_s.download([url])
 

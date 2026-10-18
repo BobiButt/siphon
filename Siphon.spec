@@ -9,9 +9,13 @@ spec_root = Path.cwd()
 datas = [
     (str(spec_root / "frontend"), "frontend"),
     (str(spec_root / "assets" / "icons"), "assets/icons"),
+    # CRITICAL: Bundle the POT binary and FFmpeg
+    (str(spec_root / "assets" / "bin"), "assets/bin"),
+    (str(spec_root / "assets" / "ffmpeg"), "assets/ffmpeg"),
 ]
 
 hidden_imports = [
+    # Uvicorn / FastAPI
     "uvicorn.logging",
     "uvicorn.loops",
     "uvicorn.loops.auto",
@@ -27,7 +31,16 @@ hidden_imports = [
     "pydantic",
     "pydantic_core",
     "yt_dlp",
+    # Pywebview / GUI
     "webview",
+    "webview.platforms.qt",
+    # PyQt5 for the window
+    "PyQt5",
+    "PyQt5.QtCore",
+    "PyQt5.QtGui",
+    "PyQt5.QtWidgets",
+    "PyQt5.QtWebEngineWidgets",
+    "PyQt5.QtWebEngineCore",
 ]
 
 a = Analysis(
@@ -58,13 +71,12 @@ exe = EXE(
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
-    console=True,
+    console=True, # Set to True so we can see debug logs if it crashes
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon="assets/icons/icon.png",
 )
 
 coll = COLLECT(
