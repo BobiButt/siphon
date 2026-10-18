@@ -1,7 +1,7 @@
 # Project State — Siphon
 
 ## Current Milestone
-**M6: Continuous Integration & Automated Releases** (Milestones 0–5 satisfied; M5 AppImage artifact built & smoke-tested; M6 CI workflows authored — final validation pending the first real CI run / tagged release)
+**M7: Search, Streaming & UI Pivot (YouTube Clone)** — implementation complete and 41 tests passing; **awaiting local user testing before the final AppImage build.**
 
 ---
 
@@ -47,19 +47,23 @@
 - **Launcher Bug Fix (Session 2):** Removed the unsupported `icon=icon_arg` argument from `webview.create_window()` in `src/siphon/launcher.py`, which previously raised a `TypeError` on GUI launch. Also removed the dead `icon_path` plumbing and now-unused imports. All 24 tests remain green.
 - **M5 AppImage Build Executed (Session 2):** Ran `scripts/build_appimage.sh` on the host (Fedora 44). Successfully produced `dist/Siphon-0.1.0-x86_64.AppImage` (30 MB, static Type 2 runtime — `static-pie linked`, no `libfuse2` dependency). Smoke test passed: `./Siphon-0.1.0-x86_64.AppImage --version` → `Siphon 0.1.0`, exit code 0. **Caveat:** host glibc is 2.43, so this locally-built artifact targets glibc ≥ 2.43 and is **not** the release-grade glibc-2.35 build. The official artifact must come from the containerized build (`scripts/build_in_docker.sh`), which will run in CI.
 - **M6 CI Workflows Authored (Session 2):** Created `.github/workflows/test.yml` (pytest matrix on Python 3.11 + 3.12), `build.yml` (containerized `build_in_docker.sh` + `--version` smoke test + artifact upload), and `release.yml` (triggered on `v*` tags; builds, smoke-tests, generates SHA-256 checksums, and publishes to a GitHub Release). Added `tests/test_ci.py` validating workflow structure. All 28 tests pass.
+- **M7 Search Backend (Session 3):** `search_youtube()` using `ytsearch<n>:` + `extract_flat=True`; `GET /api/search?q=...` endpoint returning `{id, title, uploader, duration, thumbnail, url}`. Limit clamped to [1, 50].
+- **M7 Streaming (Session 3):** `stream_url` (best progressive direct URL) added to `/api/info`; new `extract_stream_url()` + `GET /api/stream?url=...`. FFmpeg availability check (`ffmpeg_available` / `check_ffmpeg_or_warn`) logs a clear startup warning from `create_app()`.
+- **M7 YouTube-Clone UI (Session 3):** Search bar (Enter-to-search), responsive CSS-grid results, click-to-load info, HTML5 `<video>` player with the "Streaming requires muxed audio/video" fallback, and the `.format-list` "long div" bug fixed via `max-height: 300px` + `overflow-y: auto`.
+- **M7 Icon + Version (Session 3):** `gen_icons.sh` rewritten to square-pad-scale the new raster `icon.png` (300×294 → distortion-free 16–512 set); `.desktop` refreshed; version bumped to 0.2.0. New suite `tests/test_m7_search_stream.py`. **All 41 tests passing.**
 
 ---
 
 ## 🚧 In Progress
-- **M6 Validation:** CI workflows are written and lint-clean (PyYAML parses, structure verified by `tests/test_ci.py`) but have **not yet run on GitHub**. The glibc-2.35 containerized build and the end-to-end release flow still need a real CI run to confirm.
+- **Awaiting Local Test (M7):** The YouTube-clone pivot is implemented and committed. The user will test locally (`python -m siphon`) before we run the final AppImage build.
 
 ---
 
-## ⏭️ Next Up (M6 Tasks)
-1. **First CI Run:** Push to GitHub and confirm `test.yml` (3.11/3.12 matrix) and `build.yml` (containerized build + artifact upload) pass on the hosted runners.
-2. **Container Python Version Parity:** Resolve the `ubuntu:22.04` (Python 3.10) vs `requires-python >= 3.11` discrepancy in `scripts/build_in_docker.sh` — see KNOWN_ISSUES ISSUE-002.
-3. **Tagged Release Dry Run:** Push a `v0.1.0` tag and confirm `release.yml` publishes `Siphon-0.1.0-x86_64.AppImage` + `SHA256SUMS.txt` to the GitHub Release.
-4. **Final Smoke Verification:** Execute the verification suite to ensure all milestones and handoff criteria are satisfied.
+## ⏭️ Next Up
+1. **User local test (M7):** Verify search, playback, format lists, and the new icon in the running app.
+2. **Final AppImage rebuild:** After local sign-off, run `./scripts/build_in_docker.sh` (glibc 2.35) to produce the release-grade 0.2.0 artifact — requires the Docker daemon to be started.
+3. **First CI Run (M6):** Push and confirm `test.yml` + `build.yml` pass on GitHub runners.
+4. **Container Python Parity (M6):** Resolve ISSUE-002 (`ubuntu:22.04` Python 3.10 vs `requires-python >= 3.11`) before the first tagged release.
 
 ---
 

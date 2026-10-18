@@ -27,6 +27,9 @@ htmlcov/
 # Static binaries (fetched via scripts/fetch_ffmpeg.sh)
 assets/ffmpeg/ffmpeg
 
+# Derived icon size variants (regenerate with scripts/gen_icons.sh)
+assets/icons/icon_*.png
+
 # AppImage build artifacts
 *.AppImage
 

@@ -8,6 +8,6 @@ Identifiers:
     AppImage filename pattern: Siphon-<version>-x86_64.AppImage
 """
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 __app_name__ = "Siphon"
 __app_id__ = "io.github.BobiButt.siphon"

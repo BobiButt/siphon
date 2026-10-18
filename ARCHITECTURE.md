@@ -116,3 +116,27 @@ This document records the foundational architectural decisions for Siphon. Each 
   - *Building directly on the hosted runner (no container):* Rejected because runner glibc versions change over time and would violate the ADR-007 glibc-2.35 reproducibility guarantee.
   - *Writing a custom release script with the GitHub REST API:* Rejected in favor of the well-maintained `softprops/action-gh-release` action, which handles asset upload and release notes generation.
 - **Consequences:** Workflow definitions live in `.github/workflows/` and are validated by `tests/test_ci.py` (structure, Python matrix, containerized build invocation, tag trigger, and release-asset wiring). Docker is required on CI runners. Release artifacts are only produced from `v*` tags, decoupling "merge" from "release." A known open issue (ISSUE-002) remains: the `ubuntu:22.04` build container's system Python is 3.10 versus the project's `requires-python >= 3.11` requirement, which must be reconciled before the first tagged release.
+
+---
+
+### ADR-010: YouTube Search via Flat Extraction (`ytsearch:` + `extract_flat`)
+- **Date:** 2026-10-18
+- **Decision:** Implement search using yt-dlp's pseudo-URL `ytsearch<limit>:<query>` with `extract_flat=True`, exposed through `GET /api/search?q=...`. Each result returns only light-weight metadata (`id`, `title`, `uploader`, `duration`, `thumbnail`, `url`); the canonical `url` is synthesized as `https://www.youtube.com/watch?v=<id>` because flat entries do not yield a fully-resolved URL.
+- **Why:** Resolving the full format list for every search result would require one network round-trip per video, making a 10-result search unacceptably slow (seconds to tens of seconds). `extract_flat=True` tells yt-dlp to resolve only entry-level metadata in a single batched query, keeping search responsive. Full format extraction stays lazy — it happens only when the user selects a result and calls `/api/info`.
+- **Alternatives Considered:**
+  - *Full extraction per result:* Rejected due to severe latency and rate-limiting risk (N+1 request pattern).
+  - *YouTube Data API v3:* Rejected because it requires an API key, quota management, and adds a hard external dependency for a zero-config desktop app.
+  - *Scraping search HTML directly:* Rejected as fragile and easily broken by markup changes; yt-dlp already encapsulates this robustly.
+- **Consequences:** Search results carry no format data by design; the frontend must call `/api/info` on selection to obtain formats and `stream_url`. The `limit` is clamped to `[1, 50]` to bound request cost. Flat metadata is occasionally missing fields (e.g., `thumbnail`), so the UI renders defensively with fallbacks.
+
+---
+
+### ADR-011: Direct HTML5 Streaming via Progressive `stream_url`
+- **Date:** 2026-10-18
+- **Decision:** Expose a directly-playable URL for progressive (muxed) streams so the frontend can stream playback in a native HTML5 `<video>` element. `extract_video_info` tracks the highest-height format that has BOTH video and audio and returns it as `stream_url`; a dedicated `GET /api/stream?url=...` resolves the same via the `best[acodec!=none][vcodec!=none]/best` format selector. When no progressive stream exists, `stream_url` is `null` and the UI displays "Streaming requires muxed audio/video."
+- **Why:** Progressive streams (video+audio in one container) are natively playable by the browser without server-side remuxing. DASH streams are video-only or audio-only and cannot be played by a single `<video>` tag without a Media Source Extensions player or server-side muxing — both far out of scope. Surfacing the direct URL keeps the backend a thin proxy: the player fetches bytes straight from the CDN.
+- **Alternatives Considered:**
+  - *Server-side remux proxy (feed DASH through FFmpeg to the player):* Rejected for complexity, CPU cost, and latency; conflicts with the goal of streaming without downloading first.
+  - *MSE/DASH.js-style client player:* Rejected as heavy for a zero-build vanilla frontend and unnecessary when progressive streams cover the common case.
+  - *Downloading fully before playback:* Rejected because it defeats the purpose of streaming.
+- **Consequences:** Direct CDN URLs are time-limited and IP-bound, so `stream_url` must be fetched fresh before each playback (the frontend resolves it per selection). Playback only works for videos that have a progressive format (typically ≤ 720p); higher resolutions remain download-only via DASH muxing. Bundled FFmpeg remains essential for DASH downloads, and its absence is surfaced by a startup warning (`check_ffmpeg_or_warn`).

@@ -1,13 +1,23 @@
-// Siphon — Modern Frontend Application Logic (Vanilla JS)
+// Siphon — YouTube Clone Frontend Logic (Vanilla JS)
 
 document.addEventListener("DOMContentLoaded", () => {
+    const searchInput = document.getElementById("search-input");
+    const searchBtn = document.getElementById("search-btn");
+    const searchSpinner = document.getElementById("search-spinner");
     const urlInput = document.getElementById("url-input");
     const fetchBtn = document.getElementById("fetch-btn");
-    const fetchSpinner = document.getElementById("fetch-spinner");
     const outputDirInput = document.getElementById("output-dir-input");
 
     const statusBanner = document.getElementById("status-banner");
     const statusText = document.getElementById("status-text");
+
+    const searchResults = document.getElementById("search-results");
+    const resultsGrid = document.getElementById("results-grid");
+    const resultsCount = document.getElementById("results-count");
+
+    const playerSection = document.getElementById("player-section");
+    const videoPlayer = document.getElementById("video-player");
+    const playerFallback = document.getElementById("player-fallback");
 
     const mediaPreview = document.getElementById("media-preview");
     const mediaThumb = document.getElementById("media-thumb");
@@ -24,7 +34,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Helper: format duration in MM:SS or HH:MM:SS
     function formatDuration(seconds) {
-        if (!seconds) return "Unknown duration";
+        if (!seconds || isNaN(seconds)) return "Unknown";
         const h = Math.floor(seconds / 3600);
         const m = Math.floor((seconds % 3600) / 60);
         const s = Math.floor(seconds % 60);
@@ -58,7 +68,71 @@ document.addEventListener("DOMContentLoaded", () => {
         statusBanner.classList.add("hidden");
     }
 
-    // Fetch video info
+    // Reset the video player to a hidden, empty state
+    function resetPlayer() {
+        videoPlayer.pause();
+        videoPlayer.removeAttribute("src");
+        videoPlayer.load();
+        playerSection.classList.add("hidden");
+        playerFallback.classList.add("hidden");
+    }
+
+    // Configure the player from an /api/info response (uses its stream_url)
+    function applyPlayer(data) {
+        if (data.stream_url) {
+            videoPlayer.src = data.stream_url;
+            playerFallback.classList.add("hidden");
+            playerSection.classList.remove("hidden");
+        } else {
+            // No progressive/muxed stream available for direct playback.
+            videoPlayer.removeAttribute("src");
+            playerFallback.classList.remove("hidden");
+            playerSection.classList.remove("hidden");
+        }
+    }
+
+    // Load video info for a URL and render metadata, player, and formats.
+    // Shared by the direct-URL Fetch button and search-result clicks.
+    async function loadVideoInfo(url) {
+        currentUrl = url;
+        urlInput.value = url;
+        showStatus("Fetching video stream information...", "info");
+        mediaPreview.classList.add("hidden");
+        formatsContainer.classList.add("hidden");
+        resetPlayer();
+
+        const resp = await fetch(`/api/info?url=${encodeURIComponent(url)}`);
+        const data = await resp.json();
+
+        if (!resp.ok) {
+            throw new Error(data.detail || "Failed to inspect video stream.");
+        }
+
+        // Render media details
+        mediaTitle.textContent = data.title || "Untitled Video";
+        mediaUploader.textContent = data.uploader ? `Channel: ${data.uploader}` : "";
+        mediaDuration.textContent = formatDuration(data.duration);
+        if (data.thumbnail) {
+            mediaThumb.src = data.thumbnail;
+            mediaThumb.classList.remove("hidden");
+        } else {
+            mediaThumb.classList.add("hidden");
+        }
+        mediaPreview.classList.remove("hidden");
+
+        // Configure HTML5 player (progressive/muxed stream only)
+        applyPlayer(data);
+
+        // Render format lists
+        renderFormatList(progressiveList, data.progressive_options, "progressive");
+        renderFormatList(videoList, data.video_options, "video");
+        renderFormatList(audioList, data.audio_options, "audio");
+
+        formatsContainer.classList.remove("hidden");
+        showStatus("Stream formats loaded successfully.", "success");
+    }
+
+    // Fetch video info from the direct URL input
     async function handleFetchInfo() {
         const url = urlInput.value.trim();
         if (!url) {
@@ -66,45 +140,108 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        currentUrl = url;
-        showStatus("Fetching video stream information...", "info");
         fetchBtn.disabled = true;
-        fetchSpinner.classList.remove("hidden");
-        mediaPreview.classList.add("hidden");
-        formatsContainer.classList.add("hidden");
-
         try {
-            const resp = await fetch(`/api/info?url=${encodeURIComponent(url)}`);
-            const data = await resp.json();
-
-            if (!resp.ok) {
-                throw new Error(data.detail || "Failed to inspect video stream.");
-            }
-
-            // Render media details
-            mediaTitle.textContent = data.title || "Untitled Video";
-            mediaUploader.textContent = data.uploader ? `Channel: ${data.uploader}` : "";
-            mediaDuration.textContent = formatDuration(data.duration);
-            if (data.thumbnail) {
-                mediaThumb.src = data.thumbnail;
-                mediaThumb.classList.remove("hidden");
-            } else {
-                mediaThumb.classList.add("hidden");
-            }
-            mediaPreview.classList.remove("hidden");
-
-            // Render format lists
-            renderFormatList(progressiveList, data.progressive_options, "progressive");
-            renderFormatList(videoList, data.video_options, "video");
-            renderFormatList(audioList, data.audio_options, "audio");
-
-            formatsContainer.classList.remove("hidden");
-            showStatus("Stream formats loaded successfully.", "success");
+            await loadVideoInfo(url);
         } catch (err) {
             showStatus(`Error: ${err.message}`, "error");
         } finally {
             fetchBtn.disabled = false;
-            fetchSpinner.classList.add("hidden");
+        }
+    }
+
+    // Perform a YouTube search and render the results grid
+    async function handleSearch() {
+        const query = searchInput.value.trim();
+        if (!query) {
+            showStatus("Please enter a search query.", "error");
+            return;
+        }
+
+        showStatus(`Searching for “${query}”...`, "info");
+        searchBtn.disabled = true;
+        searchSpinner.classList.remove("hidden");
+
+        try {
+            const resp = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+            const data = await resp.json();
+
+            if (!resp.ok) {
+                throw new Error(data.detail || "Search failed.");
+            }
+
+            renderSearchResults(data);
+            if (data.length === 0) {
+                showStatus("No results found.", "info");
+            } else {
+                showStatus(`Found ${data.length} result(s).`, "success");
+            }
+        } catch (err) {
+            showStatus(`Search Error: ${err.message}`, "error");
+        } finally {
+            searchBtn.disabled = false;
+            searchSpinner.classList.add("hidden");
+        }
+    }
+
+    // Render the search results grid
+    function renderSearchResults(results) {
+        resultsGrid.innerHTML = "";
+        resultsCount.textContent = results.length ? `${results.length} results` : "";
+
+        if (!results || results.length === 0) {
+            searchResults.classList.add("hidden");
+            return;
+        }
+
+        results.forEach((item) => {
+            const card = document.createElement("div");
+            card.className = "result-card";
+            card.addEventListener("click", () => handleSelectResult(item.url));
+
+            const thumbWrap = document.createElement("div");
+            thumbWrap.className = "result-thumb-wrap";
+            if (item.thumbnail) {
+                const img = document.createElement("img");
+                img.className = "result-thumb";
+                img.src = item.thumbnail;
+                img.alt = item.title || "Thumbnail";
+                thumbWrap.appendChild(img);
+            }
+            const durBadge = document.createElement("span");
+            durBadge.className = "result-duration";
+            durBadge.textContent = formatDuration(item.duration);
+            thumbWrap.appendChild(durBadge);
+
+            const body = document.createElement("div");
+            body.className = "result-body";
+
+            const title = document.createElement("h3");
+            title.className = "result-title";
+            title.textContent = item.title || "Untitled";
+
+            const uploader = document.createElement("p");
+            uploader.className = "result-uploader";
+            uploader.textContent = item.uploader || "";
+
+            body.appendChild(title);
+            body.appendChild(uploader);
+
+            card.appendChild(thumbWrap);
+            card.appendChild(body);
+            resultsGrid.appendChild(card);
+        });
+
+        searchResults.classList.remove("hidden");
+    }
+
+    // Handle clicking a search result: load its full info
+    async function handleSelectResult(url) {
+        try {
+            await loadVideoInfo(url);
+            mediaPreview.scrollIntoView({ behavior: "smooth", block: "start" });
+        } catch (err) {
+            showStatus(`Error: ${err.message}`, "error");
         }
     }
 
@@ -195,6 +332,13 @@ document.addEventListener("DOMContentLoaded", () => {
     urlInput.addEventListener("keydown", (e) => {
         if (e.key === "Enter") {
             handleFetchInfo();
+        }
+    });
+
+    searchBtn.addEventListener("click", handleSearch);
+    searchInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+            handleSearch();
         }
     });
 });

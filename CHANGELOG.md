@@ -70,3 +70,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `.github/workflows/release.yml`: triggered on `v*` tags; builds, smoke-tests, generates `SHA256SUMS.txt`, and publishes the AppImage + checksums to a GitHub Release.
 - Added `tests/test_ci.py` validating the structure of all three workflow definitions (Python matrix, containerized build invocation, artifact/release asset wiring, tag trigger, and `contents:write` permission). Suite now totals 28 passing tests.
 - Added `.cache/` to `.gitignore` (build-tooling download cache for `appimagetool` and the static Type 2 runtime).
+
+### Session 3 — 2026-10-18 (Milestone 7: Search, Streaming & UI Polish)
+#### Added
+- **YouTube search backend:** `search_youtube(query, limit)` in the extractor using yt-dlp `ytsearch<limit>:` with `extract_flat=True` for fast, batched metadata-only search; returns `{id, title, uploader, duration, thumbnail, url}`. New endpoint `GET /api/search?q=...&limit=...`.
+- **Direct streaming:** `extract_video_info` now returns `stream_url` (the highest-quality progressive/muxed direct URL, or `null` when none exists); new `extract_stream_url()` + endpoint `GET /api/stream?url=...` resolving a playable URL via the `best[acodec!=none][vcodec!=none]/best` selector.
+- **FFmpeg startup check:** `ffmpeg_available()` and `check_ffmpeg_or_warn()` in `ffmpeg_muxer.py`; `create_app()` logs a clear warning when `assets/ffmpeg/ffmpeg` is missing (covers GUI and `--headless`).
+- **YouTube-clone UI:** top search bar with Enter-to-search, responsive CSS-grid results (thumbnail/title/uploader/duration badge), click-to-load info, and an HTML5 `<video>` player that plays progressive streams or shows "Streaming requires muxed audio/video."
+- **Format-list scroll fix:** `.format-list` capped at `max-height: 300px` with `overflow-y: auto` and a styled scrollbar, resolving the unbounded "loooooooooong div."
+- **Icon pipeline:** `scripts/gen_icons.sh` rewritten to square-pad-scale the new raster `icon.png` (300×294 → distortion-free 16/32/48/64/128/256/512 set); `.desktop` entry updated for the YouTube-clone positioning (Comment/Keywords/Categories).
+- Version bumped to **0.2.0**; `tests/test_m7_search_stream.py` added (search/stream/FFmpeg unit + endpoint coverage). Suite now totals 41 passing tests.

@@ -1,14 +1,48 @@
 """FFmpeg stream muxer utilizing bundled static FFmpeg binary."""
 
+import logging
 import os
 from pathlib import Path
 import subprocess
 from typing import Optional, Union
 
+logger = logging.getLogger(__name__)
+
+# Default location of the bundled static FFmpeg binary (relative to the repo root).
+DEFAULT_FFMPEG_PATH = Path("assets/ffmpeg/ffmpeg")
+
 
 class MuxingError(Exception):
     """Raised when FFmpeg muxing process fails."""
     pass
+
+
+def resolve_ffmpeg_path(ffmpeg_bin: Union[str, Path] = DEFAULT_FFMPEG_PATH) -> Path:
+    """Resolve the FFmpeg binary path, expanding ``~`` and env variables."""
+    return Path(os.path.expandvars(os.path.expanduser(str(ffmpeg_bin))))
+
+
+def ffmpeg_available(ffmpeg_bin: Union[str, Path] = DEFAULT_FFMPEG_PATH) -> bool:
+    """Return True when the bundled static FFmpeg binary exists and is executable."""
+    path = resolve_ffmpeg_path(ffmpeg_bin)
+    return path.is_file() and os.access(path, os.X_OK)
+
+
+def check_ffmpeg_or_warn(ffmpeg_bin: Union[str, Path] = DEFAULT_FFMPEG_PATH) -> bool:
+    """Log a clear warning if the bundled FFmpeg binary is missing.
+
+    Returns:
+        True if FFmpeg is available, False otherwise.
+    """
+    if ffmpeg_available(ffmpeg_bin):
+        return True
+
+    logger.warning(
+        "Bundled FFmpeg not found at '%s'. DASH high-resolution downloads that require "
+        "muxing will fail. Run scripts/fetch_ffmpeg.sh to download the pinned static binary.",
+        resolve_ffmpeg_path(ffmpeg_bin),
+    )
+    return False
 
 
 def mux_streams(

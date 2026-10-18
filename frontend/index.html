@@ -18,26 +18,41 @@
                 </div>
                 <div class="brand-text">
                     <h1>Siphon</h1>
-                    <span class="version-tag">v0.1.0</span>
+                    <span class="version-tag">v0.2.0</span>
                 </div>
             </div>
             <div class="header-status" id="header-status">Ready</div>
         </header>
 
-        <!-- URL Input Card -->
-        <section class="card input-card">
-            <div class="input-group">
+        <!-- Search Bar + Direct URL -->
+        <section class="card search-card">
+            <div class="search-group">
+                <div class="search-field">
+                    <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/>
+                    </svg>
+                    <input
+                        type="search"
+                        id="search-input"
+                        placeholder="Search YouTube..."
+                        autocomplete="off"
+                        spellcheck="false"
+                    >
+                </div>
+                <button id="search-btn" class="btn btn-primary">
+                    <span class="btn-text">Search</span>
+                    <span class="spinner hidden" id="search-spinner"></span>
+                </button>
+            </div>
+            <div class="direct-url-row">
                 <input
                     type="url"
                     id="url-input"
-                    placeholder="Paste YouTube video or shorts URL here..."
+                    placeholder="…or paste a YouTube video / shorts URL directly"
                     autocomplete="off"
                     spellcheck="false"
                 >
-                <button id="fetch-btn" class="btn btn-primary">
-                    <span class="btn-text">Fetch Info</span>
-                    <span class="spinner hidden" id="fetch-spinner"></span>
-                </button>
+                <button id="fetch-btn" class="btn btn-secondary">Fetch</button>
             </div>
             <div class="output-dir-group">
                 <label for="output-dir-input">Save directory:</label>
@@ -57,6 +72,24 @@
                 <p id="status-text"></p>
             </div>
         </div>
+
+        <!-- Search Results Grid -->
+        <section id="search-results" class="search-results hidden">
+            <div class="results-header">
+                <h2>Search Results</h2>
+                <span class="results-count" id="results-count"></span>
+            </div>
+            <div class="results-grid" id="results-grid"></div>
+        </section>
+
+        <!-- HTML5 Video Player -->
+        <section id="player-section" class="card player-card hidden">
+            <video id="video-player" class="video-player" controls preload="metadata"></video>
+            <p id="player-fallback" class="player-fallback hidden">
+                Streaming requires muxed audio/video. This video has no progressive
+                (video+audio) stream — use a DASH download below instead.
+            </p>
+        </section>
 
         <!-- Video Metadata Preview -->
         <section id="media-preview" class="card media-card hidden">

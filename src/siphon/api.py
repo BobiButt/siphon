@@ -2,11 +2,16 @@
 
 from pathlib import Path
 import shutil
-from typing import Any, Dict
+from typing import Any, Dict, List
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 from siphon.downloader import DownloadResult, MuxingError, download_media, mux_streams
-from siphon.extractors import ExtractionError, extract_video_info
+from siphon.extractors import (
+    ExtractionError,
+    extract_stream_url,
+    extract_video_info,
+    search_youtube,
+)
 
 router = APIRouter()
 
@@ -38,6 +43,57 @@ async def get_video_info(url: str = Query(..., description="YouTube video URL to
         raise HTTPException(status_code=400, detail=str(exc))
     except Exception as exc:
         raise HTTPException(status_code=400, detail=f"Unexpected error inspecting URL: {exc}")
+
+
+@router.get("/search", response_model=List[Dict[str, Any]])
+async def search_videos(
+    q: str = Query(..., min_length=1, description="YouTube search query"),
+    limit: int = Query(10, ge=1, le=50, description="Maximum number of results"),
+) -> List[Dict[str, Any]]:
+    """Search YouTube and return basic metadata for each result (flat, fast).
+
+    Uses yt-dlp's ``extract_flat`` mode so only light-weight metadata is resolved
+    per entry (no per-result format extraction), keeping search responsive.
+
+    Returns:
+        List of ``{id, title, uploader, duration, thumbnail, url}`` dictionaries.
+
+    Raises:
+        HTTPException: 400 Bad Request if the query is empty or search fails.
+    """
+    if not q.strip():
+        raise HTTPException(status_code=400, detail="Query parameter 'q' must not be empty.")
+
+    try:
+        return search_youtube(q, limit=limit)
+    except ExtractionError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"Unexpected search error: {exc}")
+
+
+@router.get("/stream", response_model=Dict[str, Any])
+async def get_stream_url(
+    url: str = Query(..., description="YouTube video URL to resolve a direct stream for"),
+) -> Dict[str, Any]:
+    """Resolve a directly-playable progressive (muxed) stream URL for a video.
+
+    Returns:
+        Dict with ``stream_url`` (direct URL, or None when no progressive stream
+        exists) and ``title``. Feed ``stream_url`` into an HTML5 ``<video>`` element.
+
+    Raises:
+        HTTPException: 400 Bad Request if the URL is empty or extraction fails.
+    """
+    if not url.strip():
+        raise HTTPException(status_code=400, detail="Query parameter 'url' must not be empty.")
+
+    try:
+        return extract_stream_url(url)
+    except ExtractionError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"Unexpected error resolving stream: {exc}")
 
 
 @router.post("/download")

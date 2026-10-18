@@ -71,3 +71,15 @@ This document tracks all implementation milestones and atomic tasks for Siphon. 
 - [x] Configure GitHub Actions workflow `.github/workflows/build.yml` executing `scripts/build_in_docker.sh` to generate the AppImage artifact.
 - [x] Configure release workflow `.github/workflows/release.yml` triggered on git tags (`v*`) to upload `Siphon-<version>-x86_64.AppImage` and SHA-256 checksums.
 - [x] Write end-to-end smoke verification test ensuring AppImage binary executes `--version` and exits with code 0. (Implemented as a `--version` smoke-test step in `build.yml`/`release.yml`; structure guarded by `tests/test_ci.py`. Locally verified: `Siphon-0.1.0-x86_64.AppImage --version` → exit 0.)
+
+---
+
+## [x] Milestone 7: Search, Streaming & UI Polish (YouTube Clone)
+- [x] Add `search_youtube(query, limit)` to the extractor using `ytsearch<n>:` with `extract_flat=True`, returning `{id, title, uploader, duration, thumbnail, url}` without per-result format extraction.
+- [x] Create `GET /api/search?q=...` endpoint returning the flat result list, with 400 handling for empty queries.
+- [x] Add `stream_url` (best progressive/muxed direct URL) to the `/api/info` response and implement `GET /api/stream?url=...` for direct playback resolution.
+- [x] Add `ffmpeg_available()` / `check_ffmpeg_or_warn()` and log a clear startup warning in `create_app()` when the bundled FFmpeg is missing.
+- [x] Build the YouTube-clone UI: top search bar, CSS-grid results, click-to-load info, HTML5 `<video>` player with a "Streaming requires muxed audio/video" fallback.
+- [x] Fix the "loooooooooong div" format-list bug with `max-height: 300px` + `overflow-y: auto` scroll containers.
+- [x] Update `scripts/gen_icons.sh` to square-pad-scale the new raster `icon.png` into the full size set (16–512); refresh the `.desktop` entry for the YouTube-clone positioning.
+- [x] Write pytest suite `tests/test_m7_search_stream.py` covering search/stream/FFmpeg logic and endpoints. All 41 tests passing.
