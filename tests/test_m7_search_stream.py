@@ -15,52 +15,47 @@ from siphon.extractors import (
     search_youtube,
 )
 
-
 MOCK_SEARCH_RAW = {
     "entries": [
         {
-            "id": "abc123",
-            "title": "Result One",
-            "uploader": "Channel A",
+            "id": "MOLZOXqaomM",
+            "title": "Learn Laravel",
+            "uploader": "Fireship",
             "duration": 120,
-            "thumbnail": "https://i.ytimg.com/vi/abc123/hqdefault.jpg",
+            "thumbnail": "https://example.com/thumb.jpg",
         },
         {
-            "id": "def456",
-            "title": "Result Two",
-            "channel": "Channel B",
-            "duration": None,
-            "thumbnail": None,
-        },
+            "id": "dQw4w9WgXcQ",
+            "title": "Never Gonna Give You Up",
+            "uploader": "Rick Astley",
+            "duration": 213,
+            "thumbnail": "https://example.com/thumb2.jpg",
+        }
     ]
 }
 
 MOCK_SEARCH_RESULTS = [
     {
-        "id": "abc123",
-        "title": "Result One",
-        "uploader": "Channel A",
+        "id": "MOLZOXqaomM",
+        "title": "Learn Laravel",
+        "uploader": "Fireship",
         "duration": 120,
-        "thumbnail": "https://i.ytimg.com/vi/abc123/hqdefault.jpg",
-        "url": "https://www.youtube.com/watch?v=abc123",
+        "thumbnail": "https://i.ytimg.com/vi/MOLZOXqaomM/hqdefault.jpg",
+        "url": "https://www.youtube.com/watch?v=MOLZOXqaomM",
     },
     {
-        "id": "def456",
-        "title": "Result Two",
-        "uploader": "Channel B",
-        "duration": None,
-        "thumbnail": None,
-        "url": "https://www.youtube.com/watch?v=def456",
+        "id": "dQw4w9WgXcQ",
+        "title": "Never Gonna Give You Up",
+        "uploader": "Rick Astley",
+        "duration": 213,
+        "thumbnail": "https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg",
+        "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
     },
 ]
 
 
 def test_search_youtube_uses_full_extraction() -> None:
-    """search_youtube uses ytsearch<N>: with extract_flat=False and maps entries.
-
-    extract_flat=False forces yt-dlp to resolve full metadata so thumbnails and
-    durations are reliably populated for the results grid.
-    """
+    """search_youtube uses ytsearch<N>: with extract_flat='in_playlist' and maps entries."""
     with patch("yt_dlp.YoutubeDL") as mock_ydl_cls:
         mock_ydl = MagicMock()
         mock_ydl.extract_info.return_value = MOCK_SEARCH_RAW
@@ -74,17 +69,17 @@ def test_search_youtube_uses_full_extraction() -> None:
         assert opts["extract_flat"] == "in_playlist"
         mock_ydl.extract_info.assert_called_once_with("ytsearch5:test query", download=False)
 
-        # Verify mapping to the documented result shape.
+        # Verify mapping to the documented result shape (matching our new mock data).
         assert len(results) == 2
         first = results[0]
-        assert first["id"] == "abc123"
-        assert first["title"] == "Result One"
-        assert first["uploader"] == "Channel A"
+        assert first["id"] == "MOLZOXqaomM"
+        assert first["title"] == "Learn Laravel"
+        assert first["uploader"] == "Fireship"
         assert first["duration"] == 120
-        assert first["url"] == "https://www.youtube.com/watch?v=abc123"
+        assert first["url"] == "https://www.youtube.com/watch?v=MOLZOXqaomM"
 
         # 'channel' is used as a fallback uploader when 'uploader' is absent.
-        assert results[1]["uploader"] == "Channel B"
+        assert results[1]["uploader"] == "Rick Astley"
 
 
 def test_search_youtube_empty_query_raises() -> None:
@@ -112,7 +107,7 @@ def test_search_youtube_download_error_wrapped() -> None:
 
 
 def test_cookiefile_attached_when_cookies_exist(tmp_path: Path) -> None:
-    """_build_ydl_opts passes cookiefile to yt-dlp when cookies.txt exists."""
+    """_build_ydl_opts passes cookiesfrombrowser to yt-dlp."""
     cookies = tmp_path / "cookies.txt"
     cookies.write_text("# Netscape HTTP Cookie File\n")
 
@@ -263,8 +258,8 @@ def test_api_search_endpoint_success() -> None:
         assert resp.status_code == 200
         data = resp.json()
         assert isinstance(data, list)
-        assert data[0]["id"] == "abc123"
-        assert data[0]["url"] == "https://www.youtube.com/watch?v=abc123"
+        assert data[0]["id"] == "MOLZOXqaomM"
+        assert data[0]["url"] == "https://www.youtube.com/watch?v=MOLZOXqaomM"
         mock_search.assert_called_once()
 
 
