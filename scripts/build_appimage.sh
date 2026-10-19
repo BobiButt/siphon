@@ -28,6 +28,9 @@ else
 fi
 
 ${PYINSTALLER_BIN} --noconfirm --clean "${REPO_ROOT}/Siphon.spec"
+# Delete the crashing GLX plugin for Fedora/Wayland compatibility
+echo "==> Patching PyInstaller output for GLX compatibility..."
+find dist/siphon -name "libqxcb-glx-integration.so" -delete || true
 
 PYINSTALLER_OUT="${REPO_ROOT}/dist/siphon"
 if [[ ! -d "${PYINSTALLER_OUT}" ]]; then
