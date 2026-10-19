@@ -54,6 +54,10 @@ def launch_app(host: str = "127.0.0.1", port: int = 0, title: str = "Siphon", wi
     pot_source = base_path / "assets" / "bin" / "bgutil-pot"
     pot_process = None
     if pot_source.exists():
+        # FIX: Kill any zombie POT processes from previous crashes
+        subprocess.run(["pkill", "-f", "bgutil-pot"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        time.sleep(0.5)
+
         cache_dir = Path.home() / ".cache" / "siphon" / "bin"
         cache_dir.mkdir(parents=True, exist_ok=True)
         pot_target = cache_dir / "bgutil-pot"
