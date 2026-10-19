@@ -11,14 +11,12 @@ datas = [
     (str(spec_root / "assets" / "icons"), "assets/icons"),
 ]
 
-# Safely add downloaded binaries if they exist
 if (spec_root / "assets" / "bin").exists():
     datas.append((str(spec_root / "assets" / "bin"), "assets/bin"))
 if (spec_root / "assets" / "ffmpeg").exists():
     datas.append((str(spec_root / "assets" / "ffmpeg"), "assets/ffmpeg"))
 
 hidden_imports = [
-    # Uvicorn / FastAPI
     "uvicorn.logging",
     "uvicorn.loops",
     "uvicorn.loops.auto",
@@ -34,16 +32,15 @@ hidden_imports = [
     "pydantic",
     "pydantic_core",
     "yt_dlp",
-    # Pywebview / GUI
     "webview",
     "webview.platforms.qt",
-    # PyQt5 for the window
     "PyQt5",
     "PyQt5.QtCore",
     "PyQt5.QtGui",
     "PyQt5.QtWidgets",
     "PyQt5.QtWebEngineWidgets",
     "PyQt5.QtWebEngineCore",
+    "qtpy",
 ]
 
 a = Analysis(

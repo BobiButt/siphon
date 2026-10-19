@@ -1,11 +1,21 @@
 """Core media download pipeline utilizing yt-dlp."""
 
-from pathlib import Path
+import os
+import sys
 import tempfile
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 import yt_dlp
 from yt_dlp.utils import DownloadError
 from siphon.extractors.ytdlp_extractor import ExtractionError
+
+# Re-export ffmpeg utilities so they can be imported from siphon.downloader
+from siphon.downloader.ffmpeg_muxer import (
+    ffmpeg_available,
+    check_ffmpeg_or_warn,
+    mux_streams,
+    MuxingError,
+)
 
 
 class DownloadResult(dict):
@@ -80,7 +90,6 @@ def download_media(
     staging_dir = Path(temp_dir) if temp_dir else Path(tempfile.mkdtemp(prefix="siphon_dl_"))
     staging_dir.mkdir(parents=True, exist_ok=True)
 
-    # Step 1: Query formats to determine stream type (progressive vs DASH vs audio-only)
     ydl_meta_opts = _get_dl_base_opts()
     ydl_meta_opts.update({
         "extract_flat": False,
@@ -100,21 +109,18 @@ def download_media(
     title = info.get("title") or "video"
     formats: List[Dict[str, Any]] = info.get("formats") or []
 
-    # Locate requested format
     requested_fmt = next((f for f in formats if str(f.get("format_id")) == str(format_id)), None)
 
     vcodec = requested_fmt.get("vcodec") if requested_fmt else None
     acodec = requested_fmt.get("acodec") if requested_fmt else None
     video_ext = (requested_fmt.get("ext") if requested_fmt else None) or "mp4"
 
-    # Identify if format is DASH video-only (needs audio companion)
     is_dash_video = bool(vcodec and vcodec != "none" and (not acodec or acodec == "none"))
 
     if requested_fmt is None and format_id not in ("ba", "bestaudio", "140", "251"):
         is_dash_video = True
 
     if is_dash_video:
-        # Find best available audio format
         audio_candidates = [
             f for f in formats
             if f.get("acodec") and f.get("acodec") != "none" and (not f.get("vcodec") or f.get("vcodec") == "none")
@@ -127,16 +133,14 @@ def download_media(
         video_path = staging_dir / f"{video_id}_{format_id}.{video_ext}"
         audio_path = staging_dir / f"{video_id}_{audio_format_id}_audio.{audio_ext}"
 
-        # Download video stream
         ydl_v_opts = _get_dl_base_opts()
         ydl_v_opts.update({
-            "format": f"{format_id}/bestvideo",  # Fallback if specific ID fails
+            "format": f"{format_id}/bestvideo",
             "outtmpl": str(video_path),
         })
         with yt_dlp.YoutubeDL(ydl_v_opts) as ydl_v:
             ydl_v.download([url])
 
-        # Download audio stream
         ydl_a_opts = _get_dl_base_opts()
         ydl_a_opts.update({
             "format": str(audio_format_id),
@@ -154,7 +158,6 @@ def download_media(
             ext=video_ext,
         )
 
-    # Progressive or audio-only stream
     is_audio_only = bool(acodec and acodec != "none" and (not vcodec or vcodec == "none"))
     file_ext = (requested_fmt.get("ext") if requested_fmt else None) or ("m4a" if is_audio_only else "mp4")
     dest_path = staging_dir / f"{video_id}_{format_id}.{file_ext}"
