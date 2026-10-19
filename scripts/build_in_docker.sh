@@ -33,6 +33,7 @@ ${DOCKER_CMD} run --rm \
             python3 \
             python3-pip \
             python3-venv \
+            libpython3.10 \
             git \
             curl \
             file \
@@ -49,9 +50,7 @@ ${DOCKER_CMD} run --rm \
 
         echo "==> Downloading required binaries..."
         mkdir -p assets/bin assets/ffmpeg
-        # Download FFmpeg via script
         ./scripts/fetch_ffmpeg.sh
-        # Download POT Provider
         curl -L -o assets/bin/bgutil-pot https://github.com/jim60105/bgutil-ytdlp-pot-provider-rs/releases/latest/download/bgutil-pot-linux-x86_64
         chmod +x assets/bin/bgutil-pot
 
