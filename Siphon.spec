@@ -1,5 +1,4 @@
 # -*- mode: python ; coding: utf-8 -*-
-# Siphon.spec — PyInstaller build specification for Siphon (ONEDIR mode)
 
 from pathlib import Path
 
@@ -17,30 +16,16 @@ if (spec_root / "assets" / "ffmpeg").exists():
     datas.append((str(spec_root / "assets" / "ffmpeg"), "assets/ffmpeg"))
 
 hidden_imports = [
-    "uvicorn.logging",
-    "uvicorn.loops",
-    "uvicorn.loops.auto",
-    "uvicorn.protocols",
-    "uvicorn.protocols.http",
-    "uvicorn.protocols.http.auto",
-    "uvicorn.protocols.websockets",
-    "uvicorn.protocols.websockets.auto",
-    "uvicorn.lifespan",
-    "uvicorn.lifespan.on",
-    "fastapi",
-    "starlette",
-    "pydantic",
-    "pydantic_core",
-    "yt_dlp",
-    "webview",
-    "webview.platforms.qt",
-    "PyQt5",
-    "PyQt5.QtCore",
-    "PyQt5.QtGui",
-    "PyQt5.QtWidgets",
-    "PyQt5.QtWebEngineWidgets",
-    "PyQt5.QtWebEngineCore",
-    "qtpy",
+    "uvicorn.logging", "uvicorn.loops", "uvicorn.loops.auto",
+    "uvicorn.protocols", "uvicorn.protocols.http", "uvicorn.protocols.http.auto",
+    "uvicorn.protocols.websockets", "uvicorn.protocols.websockets.auto",
+    "uvicorn.lifespan", "uvicorn.lifespan.on",
+    "fastapi", "starlette", "pydantic", "pydantic_core", "yt_dlp",
+    "webview", "webview.platforms.qt",
+    "PyQt5", "PyQt5.QtCore", "PyQt5.QtGui", "PyQt5.QtWidgets", 
+    "PyQt5.QtWebEngineWidgets", "PyQt5.QtWebEngineCore",
+    # CRITICAL: Add httpx for the proxy endpoint
+    "httpx", "httpcore", "anyio", "h11", "sniffio", "certifi"
 ]
 
 a = Analysis(
@@ -53,8 +38,6 @@ a = Analysis(
     hooksconfig={},
     runtime_hooks=[],
     excludes=["tkinter", "matplotlib", "numpy"],
-    win_no_prefer_redirects=False,
-    win_private_assemblies=False,
     cipher=block_cipher,
     noarchive=False,
 )
@@ -62,30 +45,14 @@ a = Analysis(
 pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 
 exe = EXE(
-    pyz,
-    a.scripts,
-    [],
-    exclude_binaries=True,
-    name="siphon",
-    debug=False,
-    bootloader_ignore_signals=False,
-    strip=False,
-    upx=True,
-    console=True,
-    disable_windowed_traceback=False,
-    argv_emulation=False,
-    target_arch=None,
-    codesign_identity=None,
-    entitlements_file=None,
+    pyz, a.scripts, [], exclude_binaries=True, name="siphon",
+    debug=False, strip=False, upx=True,
+    console=False, # FIX: Hides the terminal window!
+    disable_windowed_traceback=False, argv_emulation=False,
+    target_arch=None, codesign_identity=None, entitlements_file=None,
 )
 
 coll = COLLECT(
-    exe,
-    a.binaries,
-    a.zipfiles,
-    a.datas,
-    strip=False,
-    upx=True,
-    upx_exclude=[],
-    name="siphon",
+    exe, a.binaries, a.zipfiles, a.datas,
+    strip=False, upx=True, upx_exclude=[], name="siphon",
 )

@@ -5,18 +5,16 @@ import subprocess
 import time
 import sys
 from pathlib import Path
-
-# --- FIX: Force software rendering to prevent GLX crashes in AppImage ---
-# These MUST be set before importing webview or PyQt5
-os.environ["QTWEBENGINE_CHROMIUM_FLAGS"] = "--disable-gpu --no-sandbox"
-os.environ["QT_OPENGL"] = "software"
-os.environ["LIBGL_ALWAYS_SOFTWARE"] = "1"
-os.environ["PYWEBVIEW_GUI"] = "qt"
-os.environ["QT_API"] = "pyqt5"
-# ------------------------------------------------------------------------
-
 import webview
 from siphon.server import SiphonServer
+
+# --- FORCE SOFTWARE RENDERING & DISABLE GPU ---
+os.environ["PYWEBVIEW_GUI"] = "qt"
+os.environ["QT_API"] = "pyqt5"
+os.environ["QT_OPENGL"] = "software"
+os.environ["QTWEBENGINE_CHROMIUM_FLAGS"] = "--disable-gpu --no-sandbox"
+# ----------------------------------------------
+
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QApplication
 
@@ -41,8 +39,15 @@ def launch_app(host: str = "127.0.0.1", port: int = 0, title: str = "Siphon", wi
     
     pot_process = None
     if pot_bin.exists():
-        pot_process = subprocess.Popen([str(pot_bin), "server", "--port", "4416"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        time.sleep(1)
+        # FIX: PyInstaller strips executable permissions. Restore them!
+        os.chmod(pot_bin, 0o755)
+        
+        pot_process = subprocess.Popen(
+            [str(pot_bin), "server", "--port", "4416"], 
+            stdout=subprocess.DEVNULL, 
+            stderr=subprocess.DEVNULL
+        )
+        time.sleep(1) # Let it boot
 
     server = SiphonServer(host=host, port=port)
     assigned_port = server.start()
