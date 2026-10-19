@@ -1,7 +1,9 @@
 """yt-dlp extraction engine for Siphon."""
 
+import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+
 import yt_dlp
 from yt_dlp.utils import DownloadError
 
@@ -132,9 +134,9 @@ def search_youtube(query: str, limit: int = 20) -> List[Dict[str, Any]]:
         raise ExtractionError("A valid search query must be provided.")
 
     clamped_limit = max(1, min(int(limit), 50))
-    
+
     ydl_opts: Dict[str, Any] = _build_ydl_opts({
-        "extract_flat": "in_playlist", 
+        "extract_flat": "in_playlist",
         "playlistend": clamped_limit,
     })
 
@@ -150,18 +152,18 @@ def search_youtube(query: str, limit: int = 20) -> List[Dict[str, Any]]:
     results: List[Dict[str, Any]] = []
 
     for entry in entries:
-        if not entry: continue
-        video_id = entry.get("id") or ""
-        
-        if not video_id or len(video_id) != 11: 
+        if not entry:
             continue
-            
+        video_id = entry.get("id") or ""
+
+        if not video_id or len(video_id) != 11:
+            continue
+
         thumbnail_url = entry.get("thumbnail") or f"https://i.ytimg.com/vi/{video_id}/mqdefault.jpg"
 
-        # FIX: Try to grab exact date, fallback to relative text, fallback to Unknown
+        # Try exact date, fall back to timestamp, fall back to "Unknown"
         upload_date = entry.get("upload_date")
         if not upload_date and entry.get("timestamp"):
-            import datetime
             upload_date = datetime.datetime.fromtimestamp(entry["timestamp"]).strftime("%Y-%m-%d")
         if not upload_date:
             upload_date = "Unknown"
@@ -178,22 +180,143 @@ def search_youtube(query: str, limit: int = 20) -> List[Dict[str, Any]]:
 
     return results
 
-# ... (keep imports and previous functions) ...
 
-# ... (keep previous code) ...
+# ---------------------------------------------------------------------------
+# Streaming (in-app playback)
+# ---------------------------------------------------------------------------
+# The embedded Qt WebEngine (Chromium) build that ships with PyQt5 has NO
+# H.264 / AAC decoders and no HLS support, so the classic YouTube MP4 formats
+# (18, 22, avc1 + m4a) cannot be played - Chromium reports
+# "FFmpegDemuxer: no supported streams".  It *does* play royalty-free codecs:
+# VP9 / AV1 video and Opus audio in WebM.  YouTube only offers those as
+# separate video-only and audio-only DASH streams, so streaming returns two
+# URLs (`stream_url` = video, `audio_url` = audio) which the player keeps in
+# sync (see dual_player.js).
+
+DEFAULT_STREAM_HEIGHT = 720          # used for "Auto (Default)"
+_HTTP_PROTOCOLS = {"http", "https"}
+_STANDARD_HEIGHTS = {144, 240, 360, 480, 720, 1080, 1440, 2160, 4320}
+
+# lower rank = preferred.  VP9 first (cheapest to decode), AV1 as fallback.
+_VIDEO_CODEC_RANK = (("vp9", 0), ("vp09", 0), ("av01", 1), ("vp8", 2))
+_AUDIO_CODEC_PREFIXES = ("opus", "vorbis")
+
+
+def _norm_codec(value: Optional[str]) -> str:
+    return (value or "none").lower()
+
+
+def _is_direct_http(fmt: Dict[str, Any]) -> bool:
+    """A single file reachable over plain HTTP(S) (not HLS / DASH manifest)."""
+    protocol = (fmt.get("protocol") or "https").lower()
+    return bool(fmt.get("url")) and protocol in _HTTP_PROTOCOLS
+
+
+def _video_codec_rank(fmt: Dict[str, Any]) -> Optional[int]:
+    vcodec = _norm_codec(fmt.get("vcodec"))
+    for prefix, rank in _VIDEO_CODEC_RANK:
+        if vcodec.startswith(prefix):
+            return rank
+    return None
+
+
+def _playable_video_formats(formats: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    return [
+        f for f in formats
+        if _is_direct_http(f)
+        and _norm_codec(f.get("acodec")) == "none"
+        and _video_codec_rank(f) is not None
+        and (f.get("height") or 0) > 0
+    ]
+
+
+def _playable_audio_formats(formats: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    return [
+        f for f in formats
+        if _is_direct_http(f)
+        and _norm_codec(f.get("vcodec")) == "none"
+        and _norm_codec(f.get("acodec")).startswith(_AUDIO_CODEC_PREFIXES)
+    ]
+
+
+def _resolve_target_height(formats: List[Dict[str, Any]], format_id: Optional[str]) -> Optional[int]:
+    """Turn whatever the UI sent (a format id, '720', '720p') into a pixel height."""
+    if not format_id:
+        return None
+    wanted = str(format_id).strip()
+    for f in formats:
+        if str(f.get("format_id")) == wanted and f.get("height"):
+            return int(f["height"])
+    text = wanted.lower().rstrip("p")
+    if text.isdigit() and int(text) in _STANDARD_HEIGHTS:
+        return int(text)
+    return None
+
+
+def pick_playable_streams(
+    formats: List[Dict[str, Any]],
+    format_id: Optional[str] = None,
+    default_height: int = DEFAULT_STREAM_HEIGHT,
+) -> Dict[str, Any]:
+    """Choose a (video, audio) pair the embedded player can actually decode.
+
+    Returns {"video": fmt|None, "audio": fmt|None, "heights": [..]}.
+    `video` is the best free-codec stream at the requested height (or the
+    closest lower one; the closest higher one if nothing lower exists).
+    """
+    videos = _playable_video_formats(formats)
+    audios = _playable_audio_formats(formats)
+    heights = sorted({int(f["height"]) for f in videos})
+
+    video: Optional[Dict[str, Any]] = None
+    if videos:
+        target = _resolve_target_height(formats, format_id) or default_height
+        not_above = [h for h in heights if h <= target]
+        chosen_height = max(not_above) if not_above else min(heights)
+        at_height = [f for f in videos if int(f["height"]) == chosen_height]
+        video = min(at_height, key=lambda f: (_video_codec_rank(f), -(f.get("tbr") or 0)))
+
+    audio: Optional[Dict[str, Any]] = None
+    if audios:
+        audio = max(
+            audios,
+            key=lambda f: (f.get("language_preference") or 0, f.get("abr") or f.get("tbr") or 0),
+        )
+
+    return {"video": video, "audio": audio, "heights": heights}
+
+
+def _pick_muxed_fallback(formats: List[Dict[str, Any]], default_height: int) -> Optional[Dict[str, Any]]:
+    """Last resort: a progressive (video+audio) file.  Only decodable on Qt builds with H.264."""
+    muxed = [
+        f for f in formats
+        if _is_direct_http(f)
+        and _norm_codec(f.get("vcodec")) != "none"
+        and _norm_codec(f.get("acodec")) != "none"
+    ]
+    if not muxed:
+        return None
+    not_above = [f for f in muxed if (f.get("height") or 0) <= default_height]
+    pool = not_above or muxed
+    return max(pool, key=lambda f: f.get("height") or 0)
+
+
 def extract_stream_url(url: str, format_id: Optional[str] = None) -> Dict[str, Any]:
+    """Resolve URLs for in-app playback.
+
+    Response keys:
+      stream_url      video stream (VP9/AV1 WebM, video-only)  - or a muxed file in fallback mode
+      audio_url       Opus WebM audio stream, or None when stream_url already has sound
+      quality/height  what was actually selected
+      heights         every height that can be played (for the quality dropdown)
+      separate_audio  True when the player must keep stream_url and audio_url in sync
+    """
     if not url or not isinstance(url, str) or not url.strip():
         raise ExtractionError("A valid YouTube URL must be provided.")
 
-    # FORCE MP4 ONLY. Qt cannot play WebM/VP9.
-    if format_id:
-        target_format = f"{format_id}[ext=mp4]/18[ext=mp4]"
-    else:
-        target_format = "22[ext=mp4]/18[ext=mp4]"
-    
-    ydl_opts: Dict[str, Any] = _build_ydl_opts({
-        "format": target_format,
-    })
+    # No "format" key on purpose: we need the full format list and choose ourselves.
+    # ignoreerrors is OFF here so real failures (bot check, geo block, ...) are reported.
+    ydl_opts: Dict[str, Any] = _build_ydl_opts({"ignoreerrors": False})
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -206,11 +329,46 @@ def extract_stream_url(url: str, format_id: Optional[str] = None) -> Dict[str, A
     if not info:
         raise ExtractionError("No stream information could be retrieved.")
 
-    height = info.get("height")
-    quality = f"{height}p" if height else "360p"
+    formats: List[Dict[str, Any]] = info.get("formats") or []
+    picked = pick_playable_streams(formats, format_id=format_id)
+    video, audio = picked["video"], picked["audio"]
 
-    return {
-        "stream_url": info.get("url"),
+    result: Dict[str, Any] = {
         "title": info.get("title") or "",
-        "quality": quality,
+        "duration": info.get("duration"),
+        "heights": picked["heights"],
     }
+
+    if video:
+        height = int(video["height"])
+        result.update({
+            "stream_url": video["url"],
+            "audio_url": audio["url"] if audio else None,
+            "separate_audio": audio is not None,
+            "quality": f"{height}p",
+            "height": height,
+            "vcodec": video.get("vcodec"),
+            "acodec": audio.get("acodec") if audio else None,
+            "container": video.get("ext") or "webm",
+        })
+        if audio is None:
+            result["warning"] = "No Opus audio stream was found; video will play without sound."
+        return result
+
+    # No VP9/AV1 stream at all (rare): fall back to a progressive file.
+    muxed = _pick_muxed_fallback(formats, DEFAULT_STREAM_HEIGHT)
+    if not muxed:
+        raise ExtractionError("No playable stream found for this video.")
+    height = muxed.get("height")
+    result.update({
+        "stream_url": muxed["url"],
+        "audio_url": None,
+        "separate_audio": False,
+        "quality": f"{height}p" if height else "360p",
+        "height": height,
+        "vcodec": muxed.get("vcodec"),
+        "acodec": muxed.get("acodec"),
+        "container": muxed.get("ext") or "mp4",
+        "warning": "Only H.264/AAC streams are available; the embedded player may not be able to decode them.",
+    })
+    return result

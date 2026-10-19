@@ -26,6 +26,7 @@ htmlcov/
 
 # Static binaries (fetched via scripts/fetch_ffmpeg.sh)
 assets/ffmpeg/ffmpeg
+assets/bin/bgutil-pot
 
 # Derived icon size variants (regenerate with scripts/gen_icons.sh)
 assets/icons/icon_*.png
@@ -40,3 +41,10 @@ assets/icons/icon_*.png
 .DS_Store
 *.swp
 *~
+
+# Local secrets & temporary files
+cookies.txt
+**/cookies.txt
+.env
+*.log
+debug_search.py

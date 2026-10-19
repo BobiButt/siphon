@@ -5,13 +5,18 @@ import subprocess
 import time
 import sys
 from pathlib import Path
-import webview
-from siphon.server import SiphonServer
 
-# Force Qt backend and tell it to use PyQt5's bundled codecs
+# --- FIX: Force software rendering to prevent GLX crashes in AppImage ---
+# These MUST be set before importing webview or PyQt5
+os.environ["QTWEBENGINE_CHROMIUM_FLAGS"] = "--disable-gpu --no-sandbox"
+os.environ["QT_OPENGL"] = "software"
+os.environ["LIBGL_ALWAYS_SOFTWARE"] = "1"
 os.environ["PYWEBVIEW_GUI"] = "qt"
 os.environ["QT_API"] = "pyqt5"
+# ------------------------------------------------------------------------
 
+import webview
+from siphon.server import SiphonServer
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QApplication
 

@@ -1,9 +1,11 @@
 """FastAPI router for Siphon API endpoints."""
 
 import logging
+import re
 import shutil
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+from urllib.parse import urlparse
 
 import httpx
 from fastapi import APIRouter, HTTPException, Query, Request
@@ -21,11 +23,24 @@ from siphon.extractors import (
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
+# --- /proxy settings ---------------------------------------------------------
+# Only these hosts may be proxied (the proxy must not become an open relay).
+PROXY_ALLOWED_HOST_SUFFIXES = (".googlevideo.com", ".youtube.com", ".ytimg.com", ".googleusercontent.com")
+# YouTube rejects/throttles huge open-ended ranges; fetch in bounded pieces like yt-dlp does.
+PROXY_CHUNK_SIZE = 8 * 1024 * 1024
+PROXY_USER_AGENT = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+)
+_RANGE_RE = re.compile(r"^bytes=(\d*)-(\d*)$")
+
+
 class DownloadRequest(BaseModel):
     """Schema for media download request."""
     url: str = Field(..., description="YouTube video or media URL")
     format_id: str = Field(..., description="Target stream format ID")
     output_dir: str = Field(..., description="Directory where final output file will be saved")
+
 
 @router.get("/info", response_model=Dict[str, Any])
 async def get_video_info(url: str = Query(..., description="YouTube video URL to inspect")) -> Dict[str, Any]:
@@ -38,6 +53,7 @@ async def get_video_info(url: str = Query(..., description="YouTube video URL to
     except Exception as exc:
         logger.exception("Unexpected error in /info")
         raise HTTPException(status_code=400, detail=f"Unexpected error inspecting URL: {exc}")
+
 
 @router.get("/search", response_model=List[Dict[str, Any]])
 async def search_videos(
@@ -54,10 +70,11 @@ async def search_videos(
         logger.exception("Unexpected error in /search for query: %s", q)
         raise HTTPException(status_code=400, detail=f"Unexpected search error: {exc}")
 
+
 @router.get("/stream", response_model=Dict[str, Any])
 async def get_stream_url(
     url: str = Query(..., description="YouTube video URL to resolve a direct stream for"),
-    format_id: Optional[str] = Query(None, description="Optional specific format ID to stream"),
+    format_id: Optional[str] = Query(None, description="Optional format id or height (e.g. '720') to stream"),
 ) -> Dict[str, Any]:
     if not url.strip():
         raise HTTPException(status_code=400, detail="Query parameter 'url' must not be empty.")
@@ -69,43 +86,88 @@ async def get_stream_url(
         logger.exception("Unexpected error in /stream")
         raise HTTPException(status_code=400, detail=f"Unexpected error resolving stream: {exc}")
 
+
+def _check_proxy_target(url: str) -> None:
+    parsed = urlparse(url)
+    host = (parsed.hostname or "").lower()
+    if parsed.scheme not in ("http", "https") or not host:
+        raise HTTPException(status_code=400, detail="Invalid proxy URL.")
+    if not host.endswith(PROXY_ALLOWED_HOST_SUFFIXES):
+        raise HTTPException(status_code=403, detail=f"Host not allowed for proxying: {host}")
+
+
+def _upstream_range(range_header: Optional[str]) -> str:
+    """Translate the browser's Range header into a bounded range for YouTube."""
+    if not range_header:
+        return f"bytes=0-{PROXY_CHUNK_SIZE - 1}"
+    match = _RANGE_RE.match(range_header.strip())
+    if not match or (not match.group(1) and not match.group(2)):
+        return range_header  # multi-range or unusual form: pass through untouched
+    start, end = match.group(1), match.group(2)
+    if not start:            # suffix range "bytes=-N" (last N bytes): pass through
+        return range_header
+    start_i = int(start)
+    max_end = start_i + PROXY_CHUNK_SIZE - 1
+    end_i = min(int(end), max_end) if end else max_end
+    return f"bytes={start_i}-{end_i}"
+
+
 @router.get("/proxy")
 async def proxy_stream(request: Request, url: str = Query(...)):
-    """Proxy video stream from YouTube to bypass CORS/Header restrictions in Qt WebEngine."""
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "Referer": "https://www.youtube.com/",
-        "Accept-Encoding": "identity", # Prevent compressed stream which Qt cannot decode
-    }
-    
-    # Forward the Range header from Qt to YouTube (Crucial for video seeking/playing)
-    if "range" in request.headers:
-        headers["Range"] = request.headers["range"]
+    """Proxy a YouTube media URL to the embedded player (adds headers, handles Range)."""
+    _check_proxy_target(url)
 
-    # follow_redirects=True is CRITICAL because YouTube often redirects video URLs
-    client = httpx.AsyncClient(follow_redirects=True)
-    req = client.build_request("GET", url, headers=headers)
-    response = await client.send(req, stream=True)
+    headers = {
+        "User-Agent": PROXY_USER_AGENT,
+        "Referer": "https://www.youtube.com/",
+        "Origin": "https://www.youtube.com",
+        "Accept": "*/*",
+        "Accept-Encoding": "identity",  # never hand the player a compressed stream
+        "Range": _upstream_range(request.headers.get("range")),
+    }
+
+    # follow_redirects: googlevideo often redirects to a different edge host
+    client = httpx.AsyncClient(
+        follow_redirects=True,
+        timeout=httpx.Timeout(15.0, read=60.0),
+    )
+    try:
+        upstream = await client.send(client.build_request("GET", url, headers=headers), stream=True)
+    except httpx.HTTPError as exc:
+        await client.aclose()
+        logger.warning("Proxy could not reach upstream: %s", exc)
+        raise HTTPException(status_code=502, detail=f"Upstream request failed: {exc}")
+
+    if upstream.status_code >= 400 and upstream.status_code != 416:
+        body = (await upstream.aread())[:200]
+        await upstream.aclose()
+        await client.aclose()
+        logger.warning("Proxy upstream returned HTTP %s: %r", upstream.status_code, body)
+        raise HTTPException(
+            status_code=502,
+            detail=f"YouTube refused the stream request (HTTP {upstream.status_code}). "
+                   "The link may have expired - reload the video.",
+        )
 
     async def stream_generator():
         try:
-            async for chunk in response.aiter_bytes():
+            async for chunk in upstream.aiter_raw():
                 yield chunk
         finally:
-            await response.aclose()
+            await upstream.aclose()
             await client.aclose()
 
-    # Pass through headers from YouTube to Qt
-    resp_headers = {}
-    for h in ["content-length", "content-range", "accept-ranges", "content-type"]:
-        if h in response.headers:
-            resp_headers[h] = response.headers[h]
+    resp_headers = {"Accept-Ranges": "bytes"}
+    for name in ("content-length", "content-range", "content-type"):
+        if name in upstream.headers:
+            resp_headers[name] = upstream.headers[name]
 
     return StreamingResponse(
-        stream_generator(), 
-        status_code=response.status_code, 
+        stream_generator(),
+        status_code=upstream.status_code,
         headers=resp_headers,
     )
+
 
 @router.post("/download")
 async def execute_download(payload: DownloadRequest) -> Dict[str, Any]:

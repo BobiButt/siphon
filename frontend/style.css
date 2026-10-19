@@ -881,3 +881,23 @@ input[type="search"]::-webkit-search-cancel-button {
 @keyframes spin {
     to { transform: rotate(360deg); }
 }
+/* --- Footer --- */
+.app-footer {
+    text-align: center;
+    padding: 24px 0;
+    margin-top: 40px;
+    border-top: 1px solid #333;
+    font-size: 0.9em;
+}
+
+.app-footer a {
+    color: #7c3aed; /* Your primary purple color */
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+
+.app-footer a:hover {
+    color: #a78bfa;
+    text-decoration: underline;
+}
