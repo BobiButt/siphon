@@ -40,7 +40,8 @@ ${DOCKER_CMD} run --rm \
             xz-utils \
             imagemagick \
             libglib2.0-0 \
-            ca-certificates
+            ca-certificates \
+            binutils
 
         echo "==> Setting up virtual environment..."
         python3 -m venv /tmp/build_venv
