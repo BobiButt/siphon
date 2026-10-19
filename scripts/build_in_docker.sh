@@ -12,7 +12,6 @@ fi
 
 if ! command -v "${DOCKER_CMD}" &>/dev/null; then
     echo "Error: Neither docker nor podman was found on the host system." >&2
-    echo "Please install Docker to run the containerized reference build." >&2
     exit 1
 fi
 
@@ -47,6 +46,14 @@ ${DOCKER_CMD} run --rm \
             libxkbcommon-x11-0 \
             libdbus-1-3 \
             libxcb-xinerama0
+
+        echo "==> Downloading required binaries..."
+        mkdir -p assets/bin assets/ffmpeg
+        # Download FFmpeg via script
+        ./scripts/fetch_ffmpeg.sh
+        # Download POT Provider
+        curl -L -o assets/bin/bgutil-pot https://github.com/jim60105/bgutil-ytdlp-pot-provider-rs/releases/latest/download/bgutil-pot-linux-x86_64
+        chmod +x assets/bin/bgutil-pot
 
         echo "==> Setting up virtual environment..."
         python3 -m venv /tmp/build_venv

@@ -9,10 +9,13 @@ spec_root = Path.cwd()
 datas = [
     (str(spec_root / "frontend"), "frontend"),
     (str(spec_root / "assets" / "icons"), "assets/icons"),
-    # CRITICAL: Bundle the POT binary and FFmpeg
-    (str(spec_root / "assets" / "bin"), "assets/bin"),
-    (str(spec_root / "assets" / "ffmpeg"), "assets/ffmpeg"),
 ]
+
+# Safely add downloaded binaries if they exist
+if (spec_root / "assets" / "bin").exists():
+    datas.append((str(spec_root / "assets" / "bin"), "assets/bin"))
+if (spec_root / "assets" / "ffmpeg").exists():
+    datas.append((str(spec_root / "assets" / "ffmpeg"), "assets/ffmpeg"))
 
 hidden_imports = [
     # Uvicorn / FastAPI
@@ -71,7 +74,7 @@ exe = EXE(
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
-    console=True, # Set to True so we can see debug logs if it crashes
+    console=True,
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
