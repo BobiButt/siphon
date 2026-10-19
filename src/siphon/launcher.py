@@ -5,6 +5,7 @@ import subprocess
 import time
 import sys
 from pathlib import Path
+import shutil
 import webview
 from siphon.server import SiphonServer
 
@@ -12,7 +13,7 @@ from siphon.server import SiphonServer
 os.environ["PYWEBVIEW_GUI"] = "qt"
 os.environ["QT_API"] = "pyqt5"
 os.environ["QT_OPENGL"] = "software"
-os.environ["QTWEBENGINE_CHROMIUM_FLAGS"] = "--disable-gpu --no-sandbox"
+os.environ["QTWEBENGINE_CHROMIUM_FLAGS"] = "--disable-gpu --no-sandbox --autoplay-policy=no-user-gesture-required --disable-features=UseChromeOSDirectVideoDecoder"
 # ----------------------------------------------
 
 from PyQt5.QtGui import QIcon
@@ -39,21 +40,21 @@ def launch_app(host: str = "127.0.0.1", port: int = 0, title: str = "Siphon", wi
     
     pot_process = None
     if pot_source.exists():
-        # FIX: AppImage is read-only. Copy the binary to the user's cache folder first.
         cache_dir = Path.home() / ".cache" / "siphon" / "bin"
         cache_dir.mkdir(parents=True, exist_ok=True)
         pot_target = cache_dir / "bgutil-pot"
         
-        import shutil
         shutil.copy2(pot_source, pot_target)
-        os.chmod(pot_target, 0o755) # Make the copied file executable
+        os.chmod(pot_target, 0o755)
         
+        # Log POT output so we can debug it in ~/.cache/siphon/pot.log
+        log_file = open(Path.home() / ".cache" / "siphon" / "pot.log", "w")
         pot_process = subprocess.Popen(
             [str(pot_target), "server", "--port", "4416"], 
-            stdout=subprocess.DEVNULL, 
-            stderr=subprocess.DEVNULL
+            stdout=log_file, 
+            stderr=log_file
         )
-        time.sleep(1) # Let it boot
+        time.sleep(1.5) # Give it a bit more time to boot
 
     server = SiphonServer(host=host, port=port)
     assigned_port = server.start()

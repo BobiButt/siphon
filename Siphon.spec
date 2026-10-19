@@ -20,12 +20,22 @@ hidden_imports = [
     "uvicorn.protocols", "uvicorn.protocols.http", "uvicorn.protocols.http.auto",
     "uvicorn.protocols.websockets", "uvicorn.protocols.websockets.auto",
     "uvicorn.lifespan", "uvicorn.lifespan.on",
-    "fastapi", "starlette", "pydantic", "pydantic_core", "yt_dlp",
+    "fastapi", "starlette", "pydantic", "pydantic_core",
     "webview", "webview.platforms.qt",
     "PyQt5", "PyQt5.QtCore", "PyQt5.QtGui", "PyQt5.QtWidgets", 
     "PyQt5.QtWebEngineWidgets", "PyQt5.QtWebEngineCore",
-    # CRITICAL: Add httpx for the proxy endpoint
-    "httpx", "httpcore", "anyio", "h11", "sniffio", "certifi"
+    "httpx", "httpcore", "anyio", "h11", "sniffio", "certifi",
+    
+    # CRITICAL FIX: Bundle yt-dlp, its YouTube extractor, the POT plugin, and EJS
+    "yt_dlp",
+    "yt_dlp.extractor",
+    "yt_dlp.extractor.youtube",
+    "yt_dlp.plugins",
+    "yt_dlp_plugins",
+    "yt_dlp_plugins.extractor",
+    "yt_dlp_plugins.extractor.getpot_bgutil_http",
+    "bgutil_ytdlp_pot_provider",
+    "yt_dlp_ejs",
 ]
 
 a = Analysis(
@@ -47,7 +57,7 @@ pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 exe = EXE(
     pyz, a.scripts, [], exclude_binaries=True, name="siphon",
     debug=False, strip=False, upx=True,
-    console=False, # FIX: Hides the terminal window!
+    console=False, 
     disable_windowed_traceback=False, argv_emulation=False,
     target_arch=None, codesign_identity=None, entitlements_file=None,
 )

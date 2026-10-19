@@ -161,7 +161,6 @@ def search_youtube(query: str, limit: int = 20) -> List[Dict[str, Any]]:
 
         thumbnail_url = entry.get("thumbnail") or f"https://i.ytimg.com/vi/{video_id}/mqdefault.jpg"
 
-        # Try exact date, fall back to timestamp, fall back to "Unknown"
         upload_date = entry.get("upload_date")
         if not upload_date and entry.get("timestamp"):
             upload_date = datetime.datetime.fromtimestamp(entry["timestamp"]).strftime("%Y-%m-%d")
@@ -184,20 +183,10 @@ def search_youtube(query: str, limit: int = 20) -> List[Dict[str, Any]]:
 # ---------------------------------------------------------------------------
 # Streaming (in-app playback)
 # ---------------------------------------------------------------------------
-# The embedded Qt WebEngine (Chromium) build that ships with PyQt5 has NO
-# H.264 / AAC decoders and no HLS support, so the classic YouTube MP4 formats
-# (18, 22, avc1 + m4a) cannot be played - Chromium reports
-# "FFmpegDemuxer: no supported streams".  It *does* play royalty-free codecs:
-# VP9 / AV1 video and Opus audio in WebM.  YouTube only offers those as
-# separate video-only and audio-only DASH streams, so streaming returns two
-# URLs (`stream_url` = video, `audio_url` = audio) which the player keeps in
-# sync (see dual_player.js).
-
-DEFAULT_STREAM_HEIGHT = 720          # used for "Auto (Default)"
+DEFAULT_STREAM_HEIGHT = 720
 _HTTP_PROTOCOLS = {"http", "https"}
 _STANDARD_HEIGHTS = {144, 240, 360, 480, 720, 1080, 1440, 2160, 4320}
 
-# lower rank = preferred.  VP9 first (cheapest to decode), AV1 as fallback.
 _VIDEO_CODEC_RANK = (("vp9", 0), ("vp09", 0), ("av01", 1), ("vp8", 2))
 _AUDIO_CODEC_PREFIXES = ("opus", "vorbis")
 
@@ -207,7 +196,6 @@ def _norm_codec(value: Optional[str]) -> str:
 
 
 def _is_direct_http(fmt: Dict[str, Any]) -> bool:
-    """A single file reachable over plain HTTP(S) (not HLS / DASH manifest)."""
     protocol = (fmt.get("protocol") or "https").lower()
     return bool(fmt.get("url")) and protocol in _HTTP_PROTOCOLS
 
@@ -240,7 +228,6 @@ def _playable_audio_formats(formats: List[Dict[str, Any]]) -> List[Dict[str, Any
 
 
 def _resolve_target_height(formats: List[Dict[str, Any]], format_id: Optional[str]) -> Optional[int]:
-    """Turn whatever the UI sent (a format id, '720', '720p') into a pixel height."""
     if not format_id:
         return None
     wanted = str(format_id).strip()
@@ -258,12 +245,6 @@ def pick_playable_streams(
     format_id: Optional[str] = None,
     default_height: int = DEFAULT_STREAM_HEIGHT,
 ) -> Dict[str, Any]:
-    """Choose a (video, audio) pair the embedded player can actually decode.
-
-    Returns {"video": fmt|None, "audio": fmt|None, "heights": [..]}.
-    `video` is the best free-codec stream at the requested height (or the
-    closest lower one; the closest higher one if nothing lower exists).
-    """
     videos = _playable_video_formats(formats)
     audios = _playable_audio_formats(formats)
     heights = sorted({int(f["height"]) for f in videos})
@@ -287,7 +268,6 @@ def pick_playable_streams(
 
 
 def _pick_muxed_fallback(formats: List[Dict[str, Any]], default_height: int) -> Optional[Dict[str, Any]]:
-    """Last resort: a progressive (video+audio) file.  Only decodable on Qt builds with H.264."""
     muxed = [
         f for f in formats
         if _is_direct_http(f)
@@ -302,20 +282,9 @@ def _pick_muxed_fallback(formats: List[Dict[str, Any]], default_height: int) -> 
 
 
 def extract_stream_url(url: str, format_id: Optional[str] = None) -> Dict[str, Any]:
-    """Resolve URLs for in-app playback.
-
-    Response keys:
-      stream_url      video stream (VP9/AV1 WebM, video-only)  - or a muxed file in fallback mode
-      audio_url       Opus WebM audio stream, or None when stream_url already has sound
-      quality/height  what was actually selected
-      heights         every height that can be played (for the quality dropdown)
-      separate_audio  True when the player must keep stream_url and audio_url in sync
-    """
     if not url or not isinstance(url, str) or not url.strip():
         raise ExtractionError("A valid YouTube URL must be provided.")
 
-    # No "format" key on purpose: we need the full format list and choose ourselves.
-    # ignoreerrors is OFF here so real failures (bot check, geo block, ...) are reported.
     ydl_opts: Dict[str, Any] = _build_ydl_opts({"ignoreerrors": False})
 
     try:
@@ -355,7 +324,6 @@ def extract_stream_url(url: str, format_id: Optional[str] = None) -> Dict[str, A
             result["warning"] = "No Opus audio stream was found; video will play without sound."
         return result
 
-    # No VP9/AV1 stream at all (rare): fall back to a progressive file.
     muxed = _pick_muxed_fallback(formats, DEFAULT_STREAM_HEIGHT)
     if not muxed:
         raise ExtractionError("No playable stream found for this video.")
