@@ -1,8 +1,7 @@
 # -*- mode: python ; coding: utf-8 -*-
 
 from pathlib import Path
-import site
-import yt_dlp_plugins
+from PyInstaller.utils.hooks import collect_all
 
 block_cipher = None
 spec_root = Path.cwd()
@@ -17,10 +16,6 @@ if (spec_root / "assets" / "bin").exists():
 if (spec_root / "assets" / "ffmpeg").exists():
     datas.append((str(spec_root / "assets" / "ffmpeg"), "assets/ffmpeg"))
 
-# Add yt-dlp plugins to datas
-for path in yt_dlp_plugins.__path__:
-    datas.append((path, "yt_dlp_plugins"))
-
 hidden_imports = [
     "uvicorn.logging", "uvicorn.loops", "uvicorn.loops.auto",
     "uvicorn.protocols", "uvicorn.protocols.http", "uvicorn.protocols.http.auto",
@@ -31,14 +26,16 @@ hidden_imports = [
     "PyQt5", "PyQt5.QtCore", "PyQt5.QtGui", "PyQt5.QtWidgets", 
     "PyQt5.QtWebEngineWidgets", "PyQt5.QtWebEngineCore",
     "httpx", "httpcore", "anyio", "h11", "sniffio", "certifi",
-    
-    # CRITICAL FIX: Bundle yt-dlp, its YouTube extractor, the POT plugin, and EJS
-    "yt_dlp.extractor.youtube",
-    "yt_dlp.plugins",
-    "yt_dlp_plugins.extractor.getpot_bgutil_http",
-    "bgutil_ytdlp_pot_provider",
     "yt_dlp_ejs",
 ]
+
+# Safely collect yt_dlp_plugins (from bgutil-ytdlp-pot-provider)
+try:
+    tmp_datas, tmp_binaries, tmp_hiddenimports = collect_all("yt_dlp_plugins")
+    datas += tmp_datas
+    hidden_imports += tmp_hiddenimports
+except Exception as e:
+    print(f"Warning: Could not collect yt_dlp_plugins: {e}")
 
 a = Analysis(
     ["src/siphon/__main__.py"],
