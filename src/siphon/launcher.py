@@ -35,15 +35,21 @@ def launch_app(host: str = "127.0.0.1", port: int = 0, title: str = "Siphon", wi
     icon_str = _setup_wayland_icon()
 
     base_path = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parents[2]))
-    pot_bin = base_path / "assets" / "bin" / "bgutil-pot"
+    pot_source = base_path / "assets" / "bin" / "bgutil-pot"
     
     pot_process = None
-    if pot_bin.exists():
-        # FIX: PyInstaller strips executable permissions. Restore them!
-        os.chmod(pot_bin, 0o755)
+    if pot_source.exists():
+        # FIX: AppImage is read-only. Copy the binary to the user's cache folder first.
+        cache_dir = Path.home() / ".cache" / "siphon" / "bin"
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        pot_target = cache_dir / "bgutil-pot"
+        
+        import shutil
+        shutil.copy2(pot_source, pot_target)
+        os.chmod(pot_target, 0o755) # Make the copied file executable
         
         pot_process = subprocess.Popen(
-            [str(pot_bin), "server", "--port", "4416"], 
+            [str(pot_target), "server", "--port", "4416"], 
             stdout=subprocess.DEVNULL, 
             stderr=subprocess.DEVNULL
         )
