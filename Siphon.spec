@@ -1,6 +1,8 @@
 # -*- mode: python ; coding: utf-8 -*-
 
 from pathlib import Path
+import site
+import yt_dlp_plugins
 
 block_cipher = None
 spec_root = Path.cwd()
@@ -15,24 +17,24 @@ if (spec_root / "assets" / "bin").exists():
 if (spec_root / "assets" / "ffmpeg").exists():
     datas.append((str(spec_root / "assets" / "ffmpeg"), "assets/ffmpeg"))
 
+# Add yt-dlp plugins to datas
+for path in yt_dlp_plugins.__path__:
+    datas.append((path, "yt_dlp_plugins"))
+
 hidden_imports = [
     "uvicorn.logging", "uvicorn.loops", "uvicorn.loops.auto",
     "uvicorn.protocols", "uvicorn.protocols.http", "uvicorn.protocols.http.auto",
     "uvicorn.protocols.websockets", "uvicorn.protocols.websockets.auto",
     "uvicorn.lifespan", "uvicorn.lifespan.on",
-    "fastapi", "starlette", "pydantic", "pydantic_core",
+    "fastapi", "starlette", "pydantic", "pydantic_core", "yt_dlp",
     "webview", "webview.platforms.qt",
     "PyQt5", "PyQt5.QtCore", "PyQt5.QtGui", "PyQt5.QtWidgets", 
     "PyQt5.QtWebEngineWidgets", "PyQt5.QtWebEngineCore",
     "httpx", "httpcore", "anyio", "h11", "sniffio", "certifi",
     
     # CRITICAL FIX: Bundle yt-dlp, its YouTube extractor, the POT plugin, and EJS
-    "yt_dlp",
-    "yt_dlp.extractor",
     "yt_dlp.extractor.youtube",
     "yt_dlp.plugins",
-    "yt_dlp_plugins",
-    "yt_dlp_plugins.extractor",
     "yt_dlp_plugins.extractor.getpot_bgutil_http",
     "bgutil_ytdlp_pot_provider",
     "yt_dlp_ejs",

@@ -12,8 +12,9 @@ from siphon.server import SiphonServer
 # --- FORCE SOFTWARE RENDERING & DISABLE GPU ---
 os.environ["PYWEBVIEW_GUI"] = "qt"
 os.environ["QT_API"] = "pyqt5"
+os.environ["QT_XCB_GL_INTEGRATION"] = "none"
 os.environ["QT_OPENGL"] = "software"
-os.environ["QTWEBENGINE_CHROMIUM_FLAGS"] = "--disable-gpu --no-sandbox --autoplay-policy=no-user-gesture-required --disable-features=UseChromeOSDirectVideoDecoder"
+os.environ["QTWEBENGINE_CHROMIUM_FLAGS"] = "--disable-gpu --no-sandbox --autoplay-policy=no-user-gesture-required --disable-features=FFmpegAllowLists,UseChromeOSDirectVideoDecoder"
 # ----------------------------------------------
 
 from PyQt5.QtGui import QIcon
@@ -32,12 +33,25 @@ def _setup_wayland_icon():
     desktop_file.write_text(content)
     return str(icon_path)
 
+def _setup_ytdlp_plugins(base_path: Path):
+    """Copy yt-dlp plugins to user config so they work in PyInstaller."""
+    plugin_src = base_path / "yt_dlp_plugins"
+    if plugin_src.exists():
+        plugin_dest = Path.home() / ".config" / "yt-dlp" / "plugins" / "yt_dlp_plugins"
+        plugin_dest.parent.mkdir(parents=True, exist_ok=True)
+        if plugin_dest.exists():
+            shutil.rmtree(plugin_dest)
+        shutil.copytree(plugin_src, plugin_dest)
+
 def launch_app(host: str = "127.0.0.1", port: int = 0, title: str = "Siphon", width: int = 1060, height: int = 760) -> None:
     icon_str = _setup_wayland_icon()
 
     base_path = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parents[2]))
-    pot_source = base_path / "assets" / "bin" / "bgutil-pot"
     
+    # Setup yt-dlp plugins
+    _setup_ytdlp_plugins(base_path)
+
+    pot_source = base_path / "assets" / "bin" / "bgutil-pot"
     pot_process = None
     if pot_source.exists():
         cache_dir = Path.home() / ".cache" / "siphon" / "bin"

@@ -1,6 +1,7 @@
 """yt-dlp extraction engine for Siphon."""
 
 import datetime
+import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -40,6 +41,11 @@ def _build_ydl_opts(extra: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         },
         "cookiesfrombrowser": ("firefox",),
     }
+    
+    # CRITICAL FIX: Tell yt-dlp where to find plugins in PyInstaller
+    if getattr(sys, 'frozen', False):
+        opts["plugin_dirs"] = [str(Path(sys._MEIPASS))]
+
     if extra:
         opts.update(extra)
     return opts
