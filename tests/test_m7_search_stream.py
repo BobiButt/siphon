@@ -236,16 +236,25 @@ def test_extract_stream_url_returns_direct_url() -> None:
     """extract_stream_url returns the resolved progressive direct URL."""
     with patch("yt_dlp.YoutubeDL") as mock_ydl_cls:
         mock_ydl = MagicMock()
+        # Mock a valid formats list so the new DASH logic finds a stream
         mock_ydl.extract_info.return_value = {
-            "url": "https://cdn/stream.mp4",
             "title": "Playable",
+            "formats": [
+                {
+                    "format_id": "18",
+                    "url": "https://cdn/stream.mp4",
+                    "ext": "mp4",
+                    "vcodec": "avc1",
+                    "acodec": "mp4a",
+                    "height": 360,
+                }
+            ]
         }
         mock_ydl_cls.return_value.__enter__.return_value = mock_ydl
 
         res = extract_stream_url("https://www.youtube.com/watch?v=abc")
         assert res["stream_url"] == "https://cdn/stream.mp4"
         assert res["title"] == "Playable"
-
 
 def test_api_search_endpoint_success() -> None:
     """GET /api/search?q=... returns the mapped result list."""

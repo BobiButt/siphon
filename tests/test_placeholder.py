@@ -11,7 +11,7 @@ import siphon
 
 def test_package_metadata() -> None:
     """Verify core Siphon package identifiers and semantic version."""
-    assert siphon.__version__ == "0.2.0"
+    assert siphon.__version__ == "0.2.1"
     assert siphon.__app_name__ == "Siphon"
     assert siphon.__app_id__ == "io.github.BobiButt.siphon"
 
