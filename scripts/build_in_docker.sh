@@ -21,6 +21,8 @@ ${DOCKER_CMD} run --rm \
     --device /dev/fuse \
     --cap-add SYS_ADMIN \
     --security-opt apparmor:unconfined \
+    -e HOST_UID="$(id -u)" \
+    -e HOST_GID="$(id -g)" \
     -v "${REPO_ROOT}:/workspace" \
     -w /workspace \
     ubuntu:22.04 \
@@ -62,6 +64,12 @@ ${DOCKER_CMD} run --rm \
 
         echo "==> Executing AppImage build pipeline..."
         ./scripts/build_appimage.sh
+
+        echo "==> Fixing file permissions for GitHub Actions runner..."
+        chown -R "${HOST_UID}:${HOST_GID}" dist/ || true
+        chown -R "${HOST_UID}:${HOST_GID}" build/ || true
+        chown -R "${HOST_UID}:${HOST_GID}" assets/bin/ || true
+        chown -R "${HOST_UID}:${HOST_GID}" assets/ffmpeg/ || true
     '
 
 echo "==> Containerized AppImage build completed successfully."
